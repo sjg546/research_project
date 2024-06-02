@@ -15,10 +15,10 @@ from geopy.geocoders import Nominatim
 from linearmodel import LinearModel
 from kfactor import KFactor
 from fivethirtyeight import FiveThirtyEight
-
+from bookmakers_consensus import BookmakersConsensus
 directory = "tennis_atp/mens_atp"
 
-parser = ResultsParser()
+# parser = ResultsParser()
 # parser.read_ratings()
 elo_results = {"right":0,"wrong":0}
 rank_results = {"right":0, "wrong":0}
@@ -310,9 +310,12 @@ def predict_538_rankings():
     # plt.close()
 
 
+bm_consensus = BookmakersConsensus()
+df = bm_consensus.clean_data("odds_ds/2001.csv")
+bm_consensus.calculate_odds(df)
 # predict_matches()
 # predict_logistic_rankings()
-predict_kfactor_rankings()
+# predict_kfactor_rankings()
 # predict_538_rankings()
 # xs = [x for x in range(len(federer_k_list))]
 
