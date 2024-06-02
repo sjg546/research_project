@@ -1,0 +1,7 @@
+_pycache_/
+contests/
+results/
+tennis_atp/
+test/
+output/
+*.pyc

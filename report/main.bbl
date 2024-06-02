@@ -1,0 +1,41 @@
+\begin{thebibliography}{1}
+
+\bibitem{claesen_hyperparameter_2015}
+Marc Claesen and Bart De~Moor.
+\newblock Hyperparameter {Search} in {Machine} {Learning}, April 2015.
+\newblock arXiv:1502.02127 [cs, stat].
+
+\bibitem{EloMMR2021}
+Aram Ebtekar and Paul Liu.
+\newblock Elo-mmr: A rating system for massive multiplayer competitions, 2021.
+
+\bibitem{herbrich_trueskill_2006}
+Ralf Herbrich, Tom Minka, and Thore Graepel.
+\newblock {TrueSkill}: {A} {Bayesian} {Skill} {Rating} {System}.
+\newblock In {\em Advances in {Neural} {Information} {Processing} {Systems}}, volume~19. MIT Press, 2006.
+
+\bibitem{kovalchik_searching_2016}
+Stephanie~Ann Kovalchik.
+\newblock Searching for the {GOAT} of tennis win prediction.
+\newblock {\em Journal of Quantitative Analysis in Sports}, 12(3):127--138, September 2016.
+\newblock Publisher: De Gruyter.
+
+\bibitem{loffing_left-handedness_2012}
+Florian Loffing, Norbert Hagemann, and Bernd Strauss.
+\newblock Left-{Handedness} in {Professional} and {Amateur} {Tennis}.
+\newblock {\em PLoS ONE}, 7(11):e49325, November 2012.
+
+\bibitem{nag_tennis_2022}
+Utathya Nag.
+\newblock Tennis rankings: {Everything} you need to know, April 2022.
+
+\bibitem{sackmann_jeffsackmanntennis_atp_2024}
+Jeff Sackmann.
+\newblock {JeffSackmann}/tennis\_atp, April 2024.
+\newblock original-date: 2015-03-13T12:15:27Z.
+
+\bibitem{ATPTour2023}
+ATP Tour.
+\newblock Faq about pif atp rankings: Atp tour: Tennis, 2023.
+
+\end{thebibliography}
