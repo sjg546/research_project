@@ -309,10 +309,62 @@ def predict_538_rankings():
     # # Make sure to close the plt object once done
     # plt.close()
 
+# def merge_df(df1,df2):
 
 bm_consensus = BookmakersConsensus()
-df = bm_consensus.clean_data("odds_ds/2001.csv")
-bm_consensus.calculate_odds(df)
+# print(pd.to_datetime("31/12/2012",format='%Y%m%d'))
+# frames = []
+# for filename in os.listdir("odds_ds"):
+#     f = os.path.join("odds_ds", filename)
+#     # checking if it is a file
+#     # print(f)
+#     if os.path.isfile(f) and ".csv" in f:
+#         frames.append(bm_consensus.clean_data(f))
+
+df1 = pd.read_csv("odds_ds/2013.csv")
+31/12/2012
+df1["Date"]=pd.to_datetime(df1['Date'])
+df1.loc[df1['Location'] == "Melbourne", 'Location'] = "Australian Open"
+df1.loc[df1['Location'] == "Shanghai", 'Location'] = "Shanghai Masters"
+df1.loc[df1['Location'] == "Vina del Mar", 'Location'] = "Santiago"
+df1.loc[df1['Location'] == "New York", 'Location'] = "US Open"
+df1.loc[df1['Location'] == "Cincinnati", 'Location'] = "Cincinnati Masters"
+df1.loc[df1['Tournament'] == "Masters Cup", "Location"] = "Tour Finals"
+df1.loc[df1['Tournament'] == "BNP Paribas Masters", "Location"] = "Paris Masters"
+df1.loc[df1['Tournament'] == "Rogers Masters", "Location"] = "Canada Masters"
+df1.loc[df1['Tournament'] == "Wimbledon", "Location"] = "Wimbledon"
+df1.loc[df1['Tournament'] == "Topshelf Open", "Location"] = "s Hertogenbosch"
+df1.loc[df1['Tournament'] == "AEGON Championships", "Location"] = "Queen's Club"
+df1.loc[df1['Tournament'] == "French Open", "Location"] = "Roland Garros"
+df1.loc[df1['Tournament'] == "Internazionali BNL d'Italia", "Location"] = "Rome Masters"
+df1.loc[df1['Tournament'] == "Mutua Madrid Open", "Location"] = "Madrid Masters"
+df1.loc[df1['Tournament'] == "Monte Carlo Masters", "Location"] = "Monte Carlo Masters"
+df1.loc[df1['Tournament'] == "Sony Ericsson Open", "Location"] = "Miami Masters"
+df1.loc[df1['Tournament'] == "BNP Paribas Open", "Location"] = "Indian Wells Masters"
+df1.loc[df1['Tournament'] == "Dubai Tennis Championships", "Location"] = "Dubai"
+
+# df1["WRank"] = df1["WRank"].dropna().astype(int)
+# df1["LRank"] = df1["WRank"].dropna().astype(int)
+
+# df1["Date"] = df1['Date'] - pd.Timedelta(1, unit='D')
+
+df1["Date"]=df1['Date'].dt.strftime("%Y%m%d").astype(int)
+
+df2 = pd.read_csv("tennis_atp/mens_atp/atp_matches_2013.csv")
+# df2["winner_rank"] = df2["winner_rank"].dropna().astype(int)
+# df2["loser_rank"] = df2["loser_rank"].dropna().astype(int)
+
+new_df = pd.merge(df1, df2,  how='left', left_on=['Location','LRank','WRank'], right_on = ['tourney_name','loser_rank','winner_rank'])
+
+print(new_df) 
+new_df.to_csv("test.csv")
+# df2 = 
+# df1["Date"].str.replace("/","").astype(int)
+# print(df1["Date"])
+# bm_consensus.clean_data("odds_ds/2001.csv")
+# combined_dfs = pd.concat(frames)
+# # print(combined_dfs)
+# bm_consensus.calculate_odds(combined_dfs)
 # predict_matches()
 # predict_logistic_rankings()
 # predict_kfactor_rankings()

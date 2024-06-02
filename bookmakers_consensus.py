@@ -22,9 +22,9 @@ class BookmakersConsensus():
         # Drop a bunch of fields i dont care about
         df = df.drop(narrowed_drop_list, axis=1)
         # Drop rows which have no odds from any company
-        df_cleaned = df.dropna(subset=['CBW','CBL'], how='all')
-        df_cleaned["Comment"] = pd.np.where(df_cleaned.Comment.str.contains("Completed"), "Completed","NA")    
-        df_cleaned = df_cleaned[df_cleaned.Comment == "Completed"]
+        df_cleaned = df.dropna(subset=narrowed_companies_list, how='all')
+        # df_cleaned["Comment"] = pd.np.where(if df_cleaned.Comment.str.contains("Completed"), "Completed","NA")    
+        # df_cleaned = df_cleaned[df_cleaned.Comment == "Completed"]
         # print(df_cleaned)
         return df_cleaned
 
@@ -35,10 +35,11 @@ class BookmakersConsensus():
         temp = []
         for company in self._betting_companies:
             if company +"W" in df:
-                col_name_p1 = company+"P1"
-                col_name_p2 = company+"P2"
-                winner = company +"W"
-                loser = company+"L"
+                company_str = str(company)
+                col_name_p1 = company_str+"P1"
+                col_name_p2 = company_str+"P2"
+                winner = company_str +"W"
+                loser = company_str+"L"
                 df[col_name_p1] = df[loser]/(df[winner]+df[loser])
                 df[col_name_p2] = df[winner]/(df[loser]+df[winner])
                 df["logit" + col_name_p1] = np.log(df[col_name_p1]/(1-df[col_name_p1]))
@@ -57,7 +58,9 @@ class BookmakersConsensus():
 
         # a= (1.0/2.0)*(0.947062+1.221672)
         # print(a)
-        print(df[["p1","p2"]])
+        
+        a = len(df[df.p1 > 0.5])/len(df['p1'])
+        print(a)
            # df.apply(lambda row: row.loser/(row.winner+row.loser), axis=1)
 
         
