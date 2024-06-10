@@ -57,7 +57,7 @@ class FiveThirtyEight():
     
     def update(self,winner:Player,loser:Player):
         winner._history.append(winner._history[-1] + (self._kit(winner))*(self._weight - self.pi_i_j(winner, loser)))
-        loser._history.append(loser._history[-1] + (self._kit(loser))*(-1*self.pi_i_j(winner, loser)))
+        loser._history.append(loser._history[-1] + (self._kit(loser))*(-1*self.pi_i_j(loser, winner)))
 
     def _predict(self,probability):
         random_prob = np.random.uniform(0,1)
@@ -72,6 +72,9 @@ class FiveThirtyEight():
     def log_loss(self, y, prob):
         if y == prob:
             return 0.0
+        if y == 0.0 and prob == 1.0:
+            return 0.0
+        
         # print(f"prob={str(prob)}")
         # print(f"y={str(y)}")
         # a = math.log(prob)
@@ -82,3 +85,51 @@ class FiveThirtyEight():
     
     def overall_log_loss(self):
         return (1/len(self._log_loss_list)* sum(self._log_loss_list))
+    
+    def from_df(self, df,start,stop):
+
+        for i in range(start,stop,5):
+            self._k = i
+            df['k_winner_'+str(i)] = pd.Series(dtype='float')
+            df['k_loser_'+str(i)] = pd.Series(dtype='float')
+            df['y_'+str(i)] = pd.Series(dtype='float')
+            df['prob_'+str(i)] = pd.Series(dtype='float')
+            df['loser_prob_'+str(i)] = pd.Series(dtype='float')
+            df['log_loss_'+str(i)] = pd.Series(dtype='float')
+            #df['pred_class'] = pd.Series(dtype='float')
+
+            self._player_map.clear()
+            for index, row in df.iterrows():
+                winner_name = row['Winner']
+                loser_name = row['Loser']
+                if not winner_name in self._player_map:
+                    self._player_map[winner_name] = Player(1500.0)
+                if not loser_name in self._player_map:
+                    self._player_map[loser_name] = Player(1500.0)
+
+                winner: Player = self._player_map[winner_name]
+                loser: Player = self._player_map[loser_name]
+
+                prob = self.pi_i_j(winner,loser)
+                if(self._player_map[winner_name]._history[-1] > self._player_map[loser_name]._history[-1]):
+                    df.loc[index,"y_"+str(i)] = 1.0
+                    df.loc[index,"prob_"+str(i)] = prob
+                    df.loc[index,"loser_prob_"+str(i)] = 1- prob
+
+                    df.loc[index,"log_loss_"+str(i)] = self.log_loss(1.0,prob)
+                    # df.loc[index,"loser_prob"] = 1-prob
+                else:
+                    df.loc[index,"y_"+str(i)] = 0.0   
+                    df.loc[index,"prob_"+str(i)] = prob
+                    df.loc[index,"loser_prob_"+str(i)] = 1- prob
+                    df.loc[index,"log_loss_"+str(i)] = self.log_loss(0.0,1-prob)
+
+                    # df.loc[index,"loser_prob"] = 1-prob
+                
+                self.update(self._player_map[winner_name], self._player_map[loser_name])
+                if index % 1000 == 0:
+                    print(index)
+                df.loc[index,"k_winner_"+str(i)] = self._player_map[winner_name]._history[-1]
+                df.loc[index,"k_loser_"+str(i)] = self._player_map[loser_name]._history[-1]
+        
+        return df

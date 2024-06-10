@@ -55,7 +55,7 @@ class BookmakersConsensus():
         df['p2'] = (np.e**df['logitP2'])/(1+(np.e**df['logitP2']))
 
         final_cols = logitp1 + logitp2 +temp
-
+        print(df[['p1','p2']])
         # a= (1.0/2.0)*(0.947062+1.221672)
         # print(a)
         
