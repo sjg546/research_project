@@ -417,27 +417,44 @@ def load_joined():
     return pd.concat(frames)
 start = 5
 stop = 5
-bm_consensus = BookmakersConsensus()
-# print(pd.to_datetime("31/12/2012",format='%Y%m%d'))
-# # print(combined_dfs)
-combined_dfs = load_joined()
-bm_consensus.calculate_odds(combined_dfs)
-model = KFactor()
-c = combined_dfs.reset_index()
-a = model.from_df(c,start,stop+5)
-d = []
-for i in range(start,stop+1,5):
-    d.append("y_" +str(i))
-    d.append("prob_" +str(i))
-    d.append("loser_prob_" +str(i))
-    d.append("log_loss_" +str(i))
+start_sigma = 0.4
+start_curly = 100
+start_v = 1
+stop_sigma = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+stop_curly = 300
+stop_v = 10
 
-e = ["Winner","Loser"] + d
-print(e)
-b = a[e]
-b.to_csv("output_models/out_538.csv")
+# bm_consensus = BookmakersConsensus()
+# # print(pd.to_datetime("31/12/2012",format='%Y%m%d'))
+# # # print(combined_dfs)
+# combined_dfs = load_joined()
+# bm_consensus.calculate_odds(combined_dfs)
+# model = FiveThirtyEight()
+# c = combined_dfs.reset_index()
+# a = model.from_df(c,start_curly,stop_curly+20,start_v,stop_v+1,stop_sigma)
+# d = []
+# # for i in range(start,stop+1,5):
+# #     d.append("y_" +str(i))
+# #     d.append("prob_" +str(i))
+# #     d.append("loser_prob_" +str(i))
+# #     d.append("log_loss_" +str(i))
+# #     d.append("k_winner_" +str(i))
+# #     d.append("k_loser_" +str(i))
+# for i in range(start_curly,stop_curly+1,20):
+#     for j in range(start_v,stop_v+1,1):
+#             for k in stop_sigma:
+#                 d.append("y_" +str(i) +"_" +str(j)+"_" +str(k))
+#                 d.append("prob_" +str(i)+"_" +str(j)+"_" +str(k))
+#                 d.append("loser_prob_" +str(i)+"_" +str(j)+"_" +str(k))
+#                 d.append("log_loss_" +str(i)+"_" +str(j)+"_" +str(k))
+#                 d.append("k_winner_" +str(i)+"_" +str(j)+"_" +str(k))
+#                 d.append("k_loser_" +str(i)+"_" +str(j)+"_" +str(k))
+# e = ["Winner","Loser"] + d
+# print(e)
+# b = a[e]
+# b.to_csv("output_models/out_538.csv")
 
-c = pd.read_csv("output_models/out_538.csv")
+c = pd.read_csv("output_models/out_k.csv")
 # 0.0,0.4640522024570126,0.5359477975429874
 # print(log_loss([0],[0.4640522024570126], labels=[0,]))
 for i in range(start,stop+1,5):
@@ -446,6 +463,15 @@ for i in range(start,stop+1,5):
     print(f"k = {i} accuracy = {sum_gr_0_5/len(c)}")
     # logloss = log_loss(c['y'],c['prob'], labels=[1.0,0.0])
     print(f"k = {i} logloss = {np.mean(c['log_loss_'+str(i)])}")
+
+# for i in range(start_curly,stop_curly+1,20):
+#     for j in range(start_v,stop_v+1,1):
+#         for k in stop_sigma:
+#             sum_gr_0_5 = len(c[(c['prob_'+str(i)+"_" +str(j)+"_" +str(k)]>0.5)])
+#             print(f"curly = {i}, v = {j}, sigma = {k} accuracy = {sum_gr_0_5/len(c)}")
+#             # logloss = log_loss(c['y'],c['prob'], labels=[1.0,0.0])
+#             print(f"curly = {i}, v = {j}, sigma = {k} logloss = {np.mean(c['log_loss_'+str(i)+'_' +str(j)+'_' +str(k)])}")
+
 # predict_matches()
 # predict_logistic_rankings()
 # predict_kfactor_rankings()
