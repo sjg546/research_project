@@ -76,12 +76,6 @@ class FiveThirtyEight():
         if y == 0.0 and prob == 1.0:
             return 0.0
         
-        # print(f"prob={str(prob)}")
-        # print(f"y={str(y)}")
-        # a = math.log(prob)
-        # print(f"a={str(a)}")
-        # b = math.log(1-prob)
-        # print(f"b={str(b)}")
         return -1* ((y * math.log(prob)) + ((1-y)*math.log(1-prob)))
     
     def overall_log_loss(self):
@@ -131,7 +125,9 @@ class FiveThirtyEight():
                             df.loc[index,"log_loss_"+str(i)+"_" +str(j)+"_" +str(k)] = self.log_loss(0.0,1-prob)
 
                             # df.loc[index,"loser_prob"] = 1-prob
-                        
+                        df.loc[index,"k_prev_winner_"+str(i)+"_" +str(j)+"_" +str(k)] = self._player_map[winner_name]._history[-1]
+                        df.loc[index,"k_prev_loser_"+str(i)+"_" +str(j)+"_" +str(k)] = self._player_map[loser_name]._history[-1]
+
                         self.update(self._player_map[winner_name], self._player_map[loser_name])
                         # if index % 1000 == 0:
                         #     print(index)

@@ -17,6 +17,7 @@ from kfactor import KFactor
 from fivethirtyeight import FiveThirtyEight
 from bookmakers_consensus import BookmakersConsensus
 from sklearn.metrics import log_loss
+from surface_elo import SurfaceElo
 
 directory = "tennis_atp/mens_atp"
 
@@ -407,6 +408,14 @@ def merge_datasets():
         # print(df1["Date"])
         # bm_consensus.clean_data("odds_ds/2001.csv")
         combined_dfs = pd.concat(frames)
+def test_ll(y,prob):
+    if y == prob:
+        return 0.0
+    if y == 0.0 and prob == 1.0:
+        return 0.0
+        
+    return -1* ((y * math.log(prob)) + ((1-y)*math.log(1-prob)))
+
 
 def load_joined():
     frames = []
@@ -415,6 +424,10 @@ def load_joined():
         print(f)
         frames.append(pd.read_csv(f))
     return pd.concat(frames)
+
+def pi_i_j(winner_elo ,loser_elo):
+    return math.pow((1+ math.pow(10,(loser_elo-winner_elo)/400)) ,-1)
+
 start = 5
 stop = 5
 start_sigma = 0.4
@@ -428,10 +441,12 @@ stop_v = 10
 # # print(pd.to_datetime("31/12/2012",format='%Y%m%d'))
 # # # print(combined_dfs)
 # combined_dfs = load_joined()
-# bm_consensus.calculate_odds(combined_dfs)
+# # # # bm_consensus.calculate_odds(combined_dfs)
 # model = FiveThirtyEight()
+# # surfaces = combined_dfs["Surface"].unique()
+# # model = SurfaceElo(surfaces)
 # c = combined_dfs.reset_index()
-# a = model.from_df(c,start_curly,stop_curly+20,start_v,stop_v+1,stop_sigma)
+# a = model.from_df(c)
 # d = []
 # # for i in range(start,stop+1,5):
 # #     d.append("y_" +str(i))
@@ -449,20 +464,99 @@ stop_v = 10
 #                 d.append("log_loss_" +str(i)+"_" +str(j)+"_" +str(k))
 #                 d.append("k_winner_" +str(i)+"_" +str(j)+"_" +str(k))
 #                 d.append("k_loser_" +str(i)+"_" +str(j)+"_" +str(k))
-# e = ["Winner","Loser"] + d
-# print(e)
-# b = a[e]
-# b.to_csv("output_models/out_538.csv")
+# d.append("y_250_5_0.4" )
+# d.append("prob_250_5_0.4")
+# d.append("loser_prob_250_5_0.4")
+# d.append("log_loss_250_5_0.4")
+# d.append("k_winner_250_5_0.4")
+# d.append("k_loser_250_5_0.4") 
+# d.append("k_prev_winner_250_5_0.4")
+# d.append("k_prev_loser_250_5_0.4")
 
-c = pd.read_csv("output_models/out_k.csv")
-# 0.0,0.4640522024570126,0.5359477975429874
-# print(log_loss([0],[0.4640522024570126], labels=[0,]))
-for i in range(start,stop+1,5):
+# e = ["Winner","Loser"] + d
+# # print(e)
+# b = a[e]
+# b.to_csv("output_models/out_538_prev.csv")
+
+# b.to_csv("output_models/out_538.csv")
+# d = []
+# for surface in surfaces:
+#     d.append('surface_' + surface+ "_winner_prev")
+#     d.append('surface_' + surface+ "_loser_prev")
+#     d.append('surface_' + surface+ "_winner")
+#     d.append('surface_' + surface+ "_loser")
+# e = ["Winner","Loser"] + d + ["prob_winner", "prob_loser"]
+# b = a[e]
+# b.to_csv("output_models/out_surface_elo_prev.csv")
+a = pd.read_csv("output_models/out_538_prev.csv",usecols=["Winner","Loser","y_250_5_0.4","k_prev_winner_250_5_0.4","k_prev_loser_250_5_0.4","prob_250_5_0.4","loser_prob_250_5_0.4","log_loss_250_5_0.4"])
+# a.to_csv("output_models/out_538_optimal.csv")
+
+c = pd.read_csv("output_models/out_surface_elo_prev.csv",usecols=["prob_winner","prob_loser","surface_Hard_winner_prev","surface_Hard_loser_prev","surface_Clay_winner_prev","surface_Clay_loser_prev","surface_Carpet_winner_prev","surface_Carpet_loser_prev","surface_Grass_winner_prev","surface_Grass_loser_prev"])
+
+joined = a.join(c)
+
+sigma = 0.85
+
+surface_fields = ["surface_Hard_winner_prev","surface_Hard_loser_prev","surface_Clay_winner_prev","surface_Clay_loser_prev","surface_Carpet_winner_prev","surface_Carpet_loser_prev","surface_Grass_winner_prev","surface_Grass_loser_prev"]
+
+
+joined["combined_prob"] = sigma*joined["prob_250_5_0.4"] + (1-sigma)*joined["prob_winner"]
+for index, row in joined.iterrows():   
+    for surface in surface_fields:
+        if not pd.isna(row[surface]) and "winner" in surface:
+            joined.loc[index,"combined_winner_elo"] = sigma*row["k_prev_winner_250_5_0.4"] + (1-sigma)*row[surface]
+        if not pd.isna(row[surface]) and "loser" in surface:    
+            joined.loc[index,"combined_loser_elo"] = sigma*row["k_prev_loser_250_5_0.4"] + (1-sigma)*row[surface]
+        
+joined["combined_elo_prob"] = joined.apply(lambda row: pi_i_j(row["combined_winner_elo"],row["combined_loser_elo"]),axis=1)
+# print(joined["combined_elo_prob"])
+# joined.to_csv("output_models/combined_surface.csv")
+# joined = pd.read_csv("output_models/combined_surface.csv")
+# print(joined["prob_winner"])
+sum_gr_0_5_raw = len(joined[(joined["prob_250_5_0.4"]>0.5)])
+sum_gr_0_5 = len(joined[(joined["combined_prob"]>0.5)])
+sum_gr_0_5_comb = len(joined[(joined["combined_elo_prob"]>0.5)])
+
+print(f"accuracy comb prob = {sum_gr_0_5/len(joined)}")
+print(f"accuracy raw = {sum_gr_0_5_raw/len(joined)}")
+print(f"accuracy comb elo= {sum_gr_0_5_comb/len(joined)}")
+
+for index, row in joined.iterrows():    
+   if(row["combined_prob"] >0.5 ):
+       joined.loc[index,"combined_log_loss"] = test_ll(1.0,row["combined_prob"])
+       # df.loc[index,"loser_prob"] = 1-prob
+   else:
+       joined.loc[index,"combined_log_loss"] = test_ll(0.0,1.0-row["combined_prob"])
+
+for index, row in joined.iterrows():    
+   if(row["combined_winner_elo"] > row["combined_loser_elo"]):
+       joined.loc[index,"combined_log_loss_elo"] = test_ll(1.0,row["combined_elo_prob"])
+       # df.loc[index,"loser_prob"] = 1-prob
+   else:
+       joined.loc[index,"combined_log_loss_elo"] = test_ll(0.0,1.0-row["combined_elo_prob"])
+
+print(f"logloss comb prob = {np.mean(joined['combined_log_loss'])}")
+print(f"logloss = {np.mean(joined['log_loss_250_5_0.4'])}")
+print(f"logloss comb elo= {np.mean(joined['combined_log_loss_elo'])}")
+
+# player = 'Federer R.'
+
+# player_plot = a.query(f"Winner == '{player}' or Loser == '{player}'")
+# player_plot = player_plot.reset_index()
+# player_plot["elo"] = player_plot[["Winner","Loser","k_winner_260_5_0.4","k_loser_260_5_0.4"]].apply(lambda x : x["k_winner_260_5_0.4"] if(x["Winner"] == player) else x["k_loser_260_5_0.4"], axis=1)
+# print(player_plot[["Winner","Loser","elo"]])
+# player_plot["elo"].plot()
+# plt.show()
+# print(c)
+
+# # 0.0,0.4640522024570126,0.5359477975429874
+# # print(log_loss([0],[0.4640522024570126], labels=[0,]))
+# for i in range(start,stop+1,5):
     
-    sum_gr_0_5 = len(c[(c['prob_'+str(i)]>0.5)])
-    print(f"k = {i} accuracy = {sum_gr_0_5/len(c)}")
-    # logloss = log_loss(c['y'],c['prob'], labels=[1.0,0.0])
-    print(f"k = {i} logloss = {np.mean(c['log_loss_'+str(i)])}")
+#     sum_gr_0_5 = len(c[(c['prob_'+str(i)]>0.5)])
+#     print(f"k = {i} accuracy = {sum_gr_0_5/len(c)}")
+#     # logloss = log_loss(c['y'],c['prob'], labels=[1.0,0.0])
+#     print(f"k = {i} logloss = {np.mean(c['log_loss_'+str(i)])}")
 
 # for i in range(start_curly,stop_curly+1,20):
 #     for j in range(start_v,stop_v+1,1):

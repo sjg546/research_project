@@ -19,7 +19,7 @@ class LogisticModel():
             if probability > self._threshold:
                 self._log_loss_list.append(self.log_loss(1.0,probability))
             else:
-                self._log_loss_list.append(self.log_loss(0.0, probability))
+                self._log_loss_list.append(self.log_loss(0.0, 1- probability))
 
         # if loser_points > winner_points:
         #     return 1
