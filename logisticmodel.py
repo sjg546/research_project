@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import pandas as pd
 class LogisticModel():
     def __init__(self):
         self._intercept = 0.5
@@ -49,3 +50,30 @@ class LogisticModel():
         a = (1/len(self._log_loss_list)* sum(self._log_loss_list))
         self._log_loss_list.clear()
         return a
+
+    def from_df(self, df):
+        df['prob'] = pd.Series(dtype='float')
+        df['loser_prob'] = pd.Series(dtype='float')
+        df['log_loss'] = pd.Series(dtype='float')
+        #df['pred_class'] = pd.Series(dtype='float')
+
+        for index, row in df.iterrows():
+            winner_points = row['winner_rank_points']
+            loser_points = row['loser_rank_points']
+            diff_points = winner_points - loser_points
+            probability = self._calculate_probability_log(diff_points)
+
+            if(probability > 0.5):
+                df.loc[index,"y"] = 1.0
+                df.loc[index,"prob"] = probability
+                df.loc[index,"loser_prob"] = 1- probability
+
+                df.loc[index,"log_loss"] = self.log_loss(1.0,probability)
+                # df.loc[index,"loser_prob"] = 1-prob
+            else:
+                df.loc[index,"y"] = 0.0   
+                df.loc[index,"prob"] = probability
+                df.loc[index,"loser_prob"] = 1- probability
+                df.loc[index,"log_loss"] = self.log_loss(0.0,1-probability)
+                    
+        return df

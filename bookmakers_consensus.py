@@ -27,8 +27,15 @@ class BookmakersConsensus():
         # df_cleaned = df_cleaned[df_cleaned.Comment == "Completed"]
         # print(df_cleaned)
         return df_cleaned
+    def test_ll(self,y,prob):
+        if y == prob:
+            return 0.0
+        if y == 0.0 and prob == 1.0:
+            return 0.0
+            
+        return -1* ((y * math.log(prob)) + ((1-y)*math.log(1-prob)))
 
-    def calculate_odds(self, df):
+    def calculate_odds(self, df:pd.DataFrame):
         logitp1 = []
         logitp2 = []
         companies_used = []
@@ -54,13 +61,27 @@ class BookmakersConsensus():
         df['p1'] = (np.e**df['logitP1'])/(1+(np.e**df['logitP1']))
         df['p2'] = (np.e**df['logitP2'])/(1+(np.e**df['logitP2']))
 
-        final_cols = logitp1 + logitp2 +temp
-        print(df[['p1','p2']])
-        # a= (1.0/2.0)*(0.947062+1.221672)
-        # print(a)
+        df = df.dropna(subset=["p1","p2"])
+        df = df.reset_index()
         
-        a = len(df[df.p1 > 0.5])/len(df['p1'])
-        print(a)
-           # df.apply(lambda row: row.loser/(row.winner+row.loser), axis=1)
+    def run_metrics(self,df:pd.DataFrame):
+        df = df.dropna(subset=["p1","p2"])
+        df = df.reset_index()
+        df["actual"] = 1.0
+        for index, row in df.iterrows():
+           if(row["p1"] > 0.5 ):
+               df.loc[index,"combined_log_loss"] = self.test_ll(1.0,row["p1"])
+
+           else:
+               df.loc[index,"combined_log_loss"] = self.test_ll(0.0,row["p2"])
+
+           if(row["p1"] < 0.5 ):
+              df.loc[index,"predicted"] = 0.0
+           else:
+              df.loc[index,"predicted"] = 1.0
+
+        print(f"BM Accuracy = {len(df[df.p1 > 0.5])/len(df['p1'])}")
+        print(f"BM Logloss = {np.mean(df['combined_log_loss'])}")
+            
 
         

@@ -9,11 +9,6 @@ Marc Claesen and Bart De~Moor.
 Aram Ebtekar and Paul Liu.
 \newblock Elo-mmr: A rating system for massive multiplayer competitions, 2021.
 
-\bibitem{herbrich_trueskill_2006}
-Ralf Herbrich, Tom Minka, and Thore Graepel.
-\newblock {TrueSkill}: {A} {Bayesian} {Skill} {Rating} {System}.
-\newblock In {\em Advances in {Neural} {Information} {Processing} {Systems}}, volume~19. MIT Press, 2006.
-
 \bibitem{kovalchik_searching_2016}
 Stephanie~Ann Kovalchik.
 \newblock Searching for the {GOAT} of tennis win prediction.
@@ -37,5 +32,9 @@ Jeff Sackmann.
 \bibitem{ATPTour2023}
 ATP Tour.
 \newblock Faq about pif atp rankings: Atp tour: Tennis, 2023.
+
+\bibitem{tennis_data_uk}
+Tennis~Data UK.
+\newblock {Tennis Data UK}: All results, June 2024.
 
 \end{thebibliography}

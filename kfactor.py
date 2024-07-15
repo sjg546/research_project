@@ -144,3 +144,32 @@ class KFactor():
                 df.loc[index,"k_loser_"+str(i)] = self._player_map[loser_name]._history[-1]
         
         return df
+    def test_ll(self,y,prob):
+        if y == prob:
+            return 0.0
+        if y == 0.0 and prob == 1.0:
+            return 0.0
+            
+        return -1* ((y * math.log(prob)) + ((1-y)*math.log(1-prob)))
+   
+    def run_metrics(self,df:pd.DataFrame,k:str):
+        print(len(df[df[f"prob_{k}"] == 0.5]))
+        df = df.drop(df[df[f"prob_{k}"] == 0.5].index)
+        df = df.reset_index()
+        df["actual"] = 1.0
+        for index, row in df.iterrows():
+           if(row[f"prob_{k}"] > 0.5 ):
+               df.loc[index,"combined_log_loss"] = self.test_ll(1.0,row[f"prob_{k}"])
+
+           else:
+               df.loc[index,"combined_log_loss"] = self.test_ll(0.0,row[f"loser_prob_{k}"])
+
+           if(row[f"prob_{k}"] < 0.5 ):
+              df.loc[index,"predicted"] = 0.0
+           else:
+              df.loc[index,"predicted"] = 1.0
+        correct_predictions = len(df[df[f"prob_{k}"] > 0.5])
+        total_predictions = len(df[f"prob_{k}"])
+        print(f"K Factor, K={k}, Accuracy = {correct_predictions/total_predictions}")
+        print(f"K Factor, K={k}, Logloss = {np.mean(df['combined_log_loss'])}")
+    

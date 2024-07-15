@@ -17,302 +17,83 @@ from kfactor import KFactor
 from fivethirtyeight import FiveThirtyEight
 from bookmakers_consensus import BookmakersConsensus
 from sklearn.metrics import log_loss
+from sklearn.calibration import calibration_curve
 from surface_elo import SurfaceElo
+from sklearn.metrics import confusion_matrix
+
+'''
+1 = Logistic
+2 = K Factor
+3 = Five Thirty Eight
+4 = Five Thirty Eight - Surface ELO
+5 = Five Thirty Eight - Surface PROB
+6 = Bookmakers Consensus
+'''
+MODEL_TO_USE=5
+
+'''
+True = Build model and save to file
+False = Use presaved model
+'''
+BUILD_MODEL=False
+
+K_VALUE = 30
+
+FIVE_THIRTY_EIGHT_DELTA = 240
+FIVE_THIRTY_EIGHT_SIGMA = 0.4
+FIVE_THIRTY_EIGHT_NU = 5
+
+SURFACE_SIGMA = 0.0
 
 directory = "tennis_atp/mens_atp"
 
-# parser = ResultsParser()
-# parser.read_ratings()
-elo_results = {"right":0,"wrong":0}
-rank_results = {"right":0, "wrong":0}
-logistic_result = {"right":0,"wrong":0}
-kfactor_result = {"right":0,"wrong":0}
-five_thirty_eight_result = {"right":0,"wrong":0}
 _log_loss_list = []
-# geolocator = Nominatim(user_agent = "geoapiExercises")
-# location = geolocator.geocode("Nottingham")
-# print("Country Name: ", location)
-hand_bonus_base = 100
-height_bonus_base = 10
-
-federer_k_list = []
-federer_538_list = []
 
 def pi_i_j( winner ,loser):
     return math.pow((1+ math.pow(10,(loser-winner)/400)) ,-1)
-
-# def log_loss(y, prob):
-#         if y == prob:
-#             return 0.0
-#         # print(f"prob={str(prob)}")
-#         # print(f"y={str(y)}")
-#         # a = math.log(prob)
-#         # print(f"a={str(a)}")
-#         # b = math.log(1-prob)
-#         # print(f"b={str(b)}")
-#         return -1* ((y * math.log(prob)) + ((1-y)*math.log(1-prob)))
     
 def overall_log_loss():
         return (1/len(_log_loss_list)* sum(_log_loss_list))
 
-def predict_matches():
-    for filename in os.listdir(directory):
-        f = os.path.join(directory, filename)
-        # checking if it is a file
-        if os.path.isfile(f):
-            print(f)
-            # print(f)
-            df = pd.read_csv(f)
-            for ind in df.index:
-                contest_date=df["tourney_id"][ind]
-                winner_name = df["winner_name"][ind]
-                winner_rank = df["winner_rank"][ind]
-                winner_hand = df["winner_hand"][ind]
-                winner_height = df["winner_ht"][ind]
-                loser_name = df["loser_name"][ind]
-                loser_rank = df["loser_rank"][ind]
-                loser_hand = df["loser_hand"][ind]
-                loser_height = df["loser_ht"][ind]
 
-                ratings = parser.get_current_rankings(str(contest_date))
+def calbration_calc(df:pd.DataFrame,rank_1_name,rank2_name,prob_field_name):
+    base_x = []
+    base_y = []
+    actual_x = []
+    actual_y = []
 
-                if winner_name in ratings and loser_name in ratings:
-                    base_winner_rating = ratings[winner_name]
-                    base_loser_rating = ratings[loser_name]
-                    winner_rating = base_winner_rating
-                    loser_rating = base_loser_rating
-                    prob = pi_i_j(winner_rating,loser_rating)
+    dif_mapping = {}
+    for index, row in df.iterrows():
+        rank_diff = round(row[rank_1_name]-row[rank2_name],-1)
+        row_prob = row[prob_field_name]
+        base_x.append(rank_diff)
+        base_y.append(row_prob)
+    #     if rank_diff >= 0:
+    #         if rank_diff in dif_mapping:
+    #             dif_mapping[rank_diff].append(1.0)
+    #         else:
+    #             dif_mapping[rank_diff] = [1.0]
+    #     elif rank_diff < 0:
+    #         if rank_diff in dif_mapping:
+    #             dif_mapping[rank_diff].append(0.0)
+    #         else:
+    #             dif_mapping[rank_diff] = [0.0]
+    # for entry in dif_mapping:
+    #     actual_x.append(entry)
+    #     a = 0.0
+    #     for i in dif_mapping[entry]:
+    #         a= a + i
 
-                    # if abs(winner_rating-loser_rating) < 100:
-                    #     if winner_hand == "R" and loser_hand == "L":
-                    #         loser_rating += base_loser_rating * 0.01 # Best players are right handed?, look into scaling up left handed rating if the rating difference is less?
-                    #     elif loser_hand == "R" and winner_hand == "L":
-                    #         winner_rating += base_winner_rating * 0.01 # Best players are right handed?, look into scaling up left handed rating if the rating difference is less?
-
-                    #     if not pd.isna(winner_height) and not pd.isna(loser_height):
-                    #         if  winner_height > loser_height:
-                    #             winner_rating += base_winner_rating * 0.02
-                    #         elif loser_height > winner_height:
-                    #             loser_rating += base_loser_rating * 0.02                     
-
-                    if prob > 0.5:
-                        _log_loss_list.append(log_loss(1.0,prob))
-                        elo_results["right"] += 1
-                    else:
-                        _log_loss_list.append(log_loss(0.0,prob))
-                        elo_results["wrong"] += 1
-                
-                else:
-                    if not pd.isna(winner_rank) and not pd.isna(loser_rank):
-                        if winner_rank < loser_rank:
-                            elo_results["right"] += 1
-                        else:
-                            elo_results["wrong"] += 1
-
-                if not pd.isna(winner_rank) and not pd.isna(loser_rank):
-                    if winner_rank < loser_rank:
-                        rank_results["right"] += 1
-                    else:
-                        rank_results["wrong"] += 1
-
-    print("-------ELO RESULTS-------")
-    print(elo_results)
-    pct = elo_results["right"]/ (elo_results["right"] + elo_results["wrong"])
-    print(pct)
-    print("-------------------------")
-    print(overall_log_loss())
-    print("-----Ratings Results-----")
-    print(rank_results)
-    pct = rank_results["right"]/ (rank_results["right"] + rank_results["wrong"])
-    print(pct)
-    print("-------------------------")
+    #     prob = a/float(len(dif_mapping[entry]))
+    #     actual_y.append(prob)
 
 
-def generate_rankings(directory):
-    player_names_to_id = {}
-    print(directory)
-    for filename in os.listdir(directory):
-        f = os.path.join(directory, filename)
-        # checking if it is a file
-        if os.path.isfile(f):
-            print(f)
-            # print(f)
-            df = pd.read_csv(f)
-            previous_id = ""
-            player_performance = {}
 
-            for ind in df.index: 
-                if df["round"][ind] != "RR":
-                    current_tourney_id = df["tourney_id"][ind]
-                    if current_tourney_id != previous_id:
-                        print("new_tourney")
-                        b =dict(reversed(sorted(player_performance.items(), key=lambda item: item[1])))
+    plt.plot(base_x, base_y, label = "Accuracy",linestyle='None',marker='.')
+    # plt.plot(actual_x, actual_y, label = "Accuracy",linestyle='None',marker='x')
 
-                        player_list = []
-                        standings = []                                                
-                        if player_performance:
-                            a = max(player_performance.values())
-                            current_max = a
-                            current_rating = 1
-                            print(a)
+    plt.show()
 
-                            for entry in b:
-                                player_list.insert(0, entry)
-                                if player_performance[entry] == current_max:
-                                    ranking = current_rating
-                                else:
-                                    current_max = player_performance[entry]
-                                    current_rating += 1
-                                    ranking = current_rating
-                                standings.append([player_names_to_id[entry],ranking])
-
-                            outjson = {"id":str(df["tourney_id"][ind]),  "date":str(df["tourney_date"][ind]),"standings":standings}
-                            filename = str(df["tourney_id"][ind]) +".json"
-                            with open("test/contests/"+filename, "w") as outfile: 
-                                json.dump(outjson,outfile)
-
-
-                            # elommr.calculate_round(player_list)                    
-                            player_performance.clear()
-
-                    previous_id = current_tourney_id
-                    winner_id = int(df["winner_id"][ind])
-                    loser_id = int(df["loser_id"][ind])
-
-                    if not winner_id in player_names_to_id:
-                        player_names_to_id[winner_id] = df["winner_name"][ind] 
-                    if not loser_id in player_names_to_id:
-                        player_names_to_id[loser_id] = df["loser_name"][ind] 
-
-                    if not winner_id in player_performance:
-                        player_performance[winner_id] = 1
-                    else:
-                        player_performance[winner_id] += 1
-                    if not loser_id in player_performance:
-                        player_performance[loser_id] = 0             
-
-def predict_logistic_rankings():
-    model = LogisticModel()
-    for filename in os.listdir(directory):
-        f = os.path.join(directory, filename)
-        # checking if it is a file
-        if os.path.isfile(f):
-            print(f)
-            # print(f)
-            df = pd.read_csv(f)
-            for ind in df.index:
-                winner_rank_points = df["winner_rank_points"][ind]
-                loser_rank_points = df["loser_rank_points"][ind]
-                if not pd.isna(winner_rank_points) and not pd.isna(loser_rank_points): 
-                    prediction = model.predict_match(winner_rank_points,loser_rank_points)       
-                    if prediction == 0 :
-                        logistic_result["right"] += 1
-                    elif prediction == 1:
-                        logistic_result["wrong"] += 1
-
-    print(model.overall_log_loss())
-    print("-------Logistic RESULTS-------")
-    print(logistic_result)
-    pct = logistic_result["right"]/ (logistic_result["right"] + logistic_result["wrong"])
-    print(pct)
-    print("-------------------------")
-
-def predict_kfactor_rankings():
-    model = KFactor()
-    starting_k = 5.0
-    ending_k = 10.0
-    current_k = 1.0
-    # while current_k <= ending_k:
-    model._k = 30.0
-    for filename in os.listdir(directory):
-        f = os.path.join(directory, filename)
-        # checking if it is a file
-        if os.path.isfile(f):
-            print(f)
-            test_year = False
-            if "2019" in f:
-                test_year = True
-
-            # print(f)
-            df = pd.read_csv(f)
-            for ind in df.index:
-                winner_name = df["winner_name"][ind]
-                loser_name = df["loser_name"][ind]
-                if not pd.isna(winner_name) and not pd.isna(loser_name):                    
-                    if model.predict_match(winner_name,loser_name,test_year):
-                        kfactor_result["right"] += 1
-                    else:
-                        kfactor_result["wrong"] += 1
-    accuracy = kfactor_result["right"]/ (kfactor_result["right"] + kfactor_result["wrong"])
-    model.multiple_log_loss.append(model.overall_log_loss())
-    model._multiple_accuracy.append(accuracy)
-    kfactor_result.clear
-    current_k += 5.0
-    print(model.multiple_log_loss)
-    print(model._multiple_accuracy)
-
-    print(model._test_year)
-    pct = model._test_year["right"]/ (model._test_year["right"] + model._test_year["wrong"])
-    print(pct)
-
-    global federer_k_list
-    federer_k_list = model._federer_rank
-
-    # xs = [x for x in range(len(model._federer_rank))]
-
-    # plt.plot(xs, model._federer_rank)
-    # plt.show()
-    # # Make sure to close the plt object once done
-    # plt.close()
-
-    # print(model.overall_log_loss())
-    # # print(model._player_map["Roger Federer"]._history)
-    # print("-------KFactor RESULTS-------")
-    # print(kfactor_result)
-    # pct = kfactor_result["right"]/ (kfactor_result["right"] + kfactor_result["wrong"])
-    # print(pct)
-    # print("-------------------------")
-
-def predict_538_rankings():
-    model = FiveThirtyEight()
-    for filename in os.listdir(directory):
-        f = os.path.join(directory, filename)
-        # checking if it is a file
-        if os.path.isfile(f):
-            print(f)
-            test_year = False
-            if "2019" in f:
-                test_year = True
-            # print(f)
-            df = pd.read_csv(f)
-            for ind in df.index:
-                winner_name = df["winner_name"][ind]
-                loser_name = df["loser_name"][ind]
-                if not pd.isna(winner_name) and not pd.isna(loser_name):                    
-                    if model.predict_match(winner_name,loser_name,test_year):
-                        five_thirty_eight_result["right"] += 1
-                    else:
-                        five_thirty_eight_result["wrong"] += 1
-
-    print(model.overall_log_loss())
-    # print(model._player_map["Roger Federer"]._history)
-    print("-------538 RESULTS-------")
-    print(five_thirty_eight_result)
-    pct = five_thirty_eight_result["right"]/ (five_thirty_eight_result["right"] + five_thirty_eight_result["wrong"])
-    print(pct)
-    print("-------------------------")
-    print(model._test_year)
-    pct = model._test_year["right"]/ (model._test_year["right"] + model._test_year["wrong"])
-    print(pct)
-
-    global federer_538_list
-    federer_538_list = model._federer_rank
-    # plt.plot(xs, model._federer_rank)
-    # plt.show()
-    # # Make sure to close the plt object once done
-    # plt.close()
-
-# def merge_df(df1,df2):
 def merge_datasets():
     frames = []
     for filename in os.listdir("odds_ds"):
@@ -421,33 +202,137 @@ def load_joined():
     frames = []
     for filename in os.listdir("joined"):
         f = os.path.join("joined", filename)
-        print(f)
+        # print(f)
         frames.append(pd.read_csv(f))
     return pd.concat(frames)
 
 def pi_i_j(winner_elo ,loser_elo):
     return math.pow((1+ math.pow(10,(loser_elo-winner_elo)/400)) ,-1)
 
-start = 5
-stop = 5
-start_sigma = 0.4
-start_curly = 100
-start_v = 1
-stop_sigma = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
-stop_curly = 300
-stop_v = 10
+def build_five_thirty_eight(model,combined_dfs):
+    df = model.from_df(combined_dfs,FIVE_THIRTY_EIGHT_DELTA,FIVE_THIRTY_EIGHT_DELTA+1,
+                       FIVE_THIRTY_EIGHT_NU,FIVE_THIRTY_EIGHT_NU+1,
+                       [FIVE_THIRTY_EIGHT_SIGMA])
+    
+    column_list = []
+    column_list.append(f"y_{FIVE_THIRTY_EIGHT_DELTA}_{FIVE_THIRTY_EIGHT_NU}_{FIVE_THIRTY_EIGHT_SIGMA}")
+    column_list.append(f"prob_{FIVE_THIRTY_EIGHT_DELTA}_{FIVE_THIRTY_EIGHT_NU}_{FIVE_THIRTY_EIGHT_SIGMA}")
+    column_list.append(f"loser_prob_{FIVE_THIRTY_EIGHT_DELTA}_{FIVE_THIRTY_EIGHT_NU}_{FIVE_THIRTY_EIGHT_SIGMA}")
+    column_list.append(f"log_loss_{FIVE_THIRTY_EIGHT_DELTA}_{FIVE_THIRTY_EIGHT_NU}_{FIVE_THIRTY_EIGHT_SIGMA}")
+    column_list.append(f"k_winner_{FIVE_THIRTY_EIGHT_DELTA}_{FIVE_THIRTY_EIGHT_NU}_{FIVE_THIRTY_EIGHT_SIGMA}")
+    column_list.append(f"k_loser_{FIVE_THIRTY_EIGHT_DELTA}_{FIVE_THIRTY_EIGHT_NU}_{FIVE_THIRTY_EIGHT_SIGMA}")
+    column_list.append(f"k_prev_winner_{FIVE_THIRTY_EIGHT_DELTA}_{FIVE_THIRTY_EIGHT_NU}_{FIVE_THIRTY_EIGHT_SIGMA}")
+    column_list.append(f"k_prev_loser_{FIVE_THIRTY_EIGHT_DELTA}_{FIVE_THIRTY_EIGHT_NU}_{FIVE_THIRTY_EIGHT_SIGMA}")
 
-# bm_consensus = BookmakersConsensus()
-# # print(pd.to_datetime("31/12/2012",format='%Y%m%d'))
-# # # print(combined_dfs)
-# combined_dfs = load_joined()
-# # # # bm_consensus.calculate_odds(combined_dfs)
+    final_columns = ["Winner","Loser"] + column_list
+    df_to_save = df[final_columns]
+    df_to_save.to_csv("output_models/temp_538.csv")
+
+    return df_to_save
+
+def build_k_factor(model,combined_dfs):
+    df = model.from_df(combined_dfs,K_VALUE,K_VALUE+1)
+    column_list = []
+    column_list.append(f"y_{K_VALUE}")
+    column_list.append(f"prob_{K_VALUE}")
+    column_list.append(f"loser_prob_{K_VALUE}")
+    column_list.append(f"log_loss_{K_VALUE}")
+    column_list.append(f"k_winner_{K_VALUE}")
+    column_list.append(f"k_loser_{K_VALUE}")
+    final_columns = ["Winner","Loser"] + column_list
+    df_to_save = df[final_columns]
+    df_to_save.to_csv("output_models/temp_k_factor.csv")
+    return df_to_save
+
+def build_surface_elo(model,combined_dfs):
+    surfaces = combined_dfs["Surface"].unique()
+    df = model.from_df(combined_dfs)
+    column_list = []
+    for surface in surfaces:
+        column_list.append('surface_' + surface+ "_winner_prev")
+        column_list.append('surface_' + surface+ "_loser_prev")
+        column_list.append('surface_' + surface+ "_winner")
+        column_list.append('surface_' + surface+ "_loser")
+
+    final_columns = ["Winner","Loser"] + column_list + ["prob_winner", "prob_loser"]
+    df_to_save = df[final_columns]
+    df_to_save.to_csv("output_models/temp_surface.csv")
+    return df_to_save
+
+if BUILD_MODEL:
+    combined_dfs = load_joined()
+    combined_dfs = combined_dfs.reset_index()
+
+if MODEL_TO_USE == 1:
+    model = LogisticModel()
+elif MODEL_TO_USE == 2:
+    model = KFactor()
+    if BUILD_MODEL:
+        df = build_k_factor(model)
+    else:
+        df = pd.read_csv("output_models/temp_k_factor.csv")
+
+    model.run_metrics(df, K_VALUE)
+
+elif MODEL_TO_USE == 3:
+    model = FiveThirtyEight()
+    if BUILD_MODEL:
+        df = build_five_thirty_eight(model)
+    else:
+        df = pd.read_csv("output_models/temp_538.csv")
+
+    model.run_metrics(df, FIVE_THIRTY_EIGHT_DELTA,FIVE_THIRTY_EIGHT_NU,FIVE_THIRTY_EIGHT_SIGMA)
+
+elif MODEL_TO_USE == 4:
+    combined_dfs = load_joined()
+    combined_dfs = combined_dfs.reset_index()
+
+    surfaces = combined_dfs["Surface"].unique()
+    model = SurfaceElo(surfaces,FIVE_THIRTY_EIGHT_DELTA,FIVE_THIRTY_EIGHT_NU,FIVE_THIRTY_EIGHT_SIGMA)
+    if BUILD_MODEL:
+        df = build_surface_elo(model,combined_dfs)
+    else:
+        df = pd.read_csv("output_models/temp_surface.csv")
+
+    model.run_metrics(df,SURFACE_SIGMA,False)
+
+elif MODEL_TO_USE == 5:
+    combined_dfs = load_joined()
+    combined_dfs = combined_dfs.reset_index()
+
+    surfaces = combined_dfs["Surface"].unique()
+    model = SurfaceElo(surfaces,FIVE_THIRTY_EIGHT_DELTA,FIVE_THIRTY_EIGHT_NU,FIVE_THIRTY_EIGHT_SIGMA)
+    if BUILD_MODEL:
+        df = build_surface_elo(model,combined_dfs)
+    else:
+        df = pd.read_csv("output_models/temp_surface.csv")
+
+    model.run_metrics(df,SURFACE_SIGMA,True)
+
+elif MODEL_TO_USE == 6:
+    model = BookmakersConsensus()  
+    if BUILD_MODEL:
+        model.calculate_odds(combined_dfs)
+        combined_dfs.to_csv("output_models/temp_bookmakers.csv")
+    else:
+        combined_dfs = pd.read_csv("output_models/temp_bookmakers.csv")
+
+    model.run_metrics(combined_dfs)
+else:
+    print("Error no valid model selected")
+    exit(1)
+
 # model = FiveThirtyEight()
-# # surfaces = combined_dfs["Surface"].unique()
-# # model = SurfaceElo(surfaces)
+# model = LogisticModel()
+# # # surfaces = combined_dfs["Surface"].unique()
+# # # model = SurfaceElo(surfaces)
 # c = combined_dfs.reset_index()
 # a = model.from_df(c)
 # d = []
+
+# d.append("prob")
+# d.append("loser_prob")
+# d.append("log_loss")
 # # for i in range(start,stop+1,5):
 # #     d.append("y_" +str(i))
 # #     d.append("prob_" +str(i))
@@ -474,6 +359,10 @@ stop_v = 10
 # d.append("k_prev_loser_250_5_0.4")
 
 # e = ["Winner","Loser"] + d
+# b = a[e]
+
+# b.to_csv("output_models/out_logistic.csv")
+
 # # print(e)
 # b = a[e]
 # b.to_csv("output_models/out_538_prev.csv")
@@ -484,80 +373,108 @@ stop_v = 10
 #     d.append('surface_' + surface+ "_winner_prev")
 #     d.append('surface_' + surface+ "_loser_prev")
 #     d.append('surface_' + surface+ "_winner")
-#     d.append('surface_' + surface+ "_loser")
-# e = ["Winner","Loser"] + d + ["prob_winner", "prob_loser"]
+#     d.append('surface_' + surface+ "_losprob_winnerer")
+# e = ["Winner","Loser"] + d + ["", "prob_loser"]
 # b = a[e]
 # b.to_csv("output_models/out_surface_elo_prev.csv")
-a = pd.read_csv("output_models/out_538_prev.csv",usecols=["Winner","Loser","y_250_5_0.4","k_prev_winner_250_5_0.4","k_prev_loser_250_5_0.4","prob_250_5_0.4","loser_prob_250_5_0.4","log_loss_250_5_0.4"])
-# a.to_csv("output_models/out_538_optimal.csv")
+# a = pd.read_csv("output_models/out_logistic.csv",usecols=["Winner","Loser","prob","log_loss"])
+# sum_gr_0_5_logistics = len(a[(a["prob"]>0.5)])
+# print(f"accuracy log prob = {sum_gr_0_5_logistics/len(a)}")
+# print(f"logloss log prob = {np.mean(a['log_loss'])}")
 
-c = pd.read_csv("output_models/out_surface_elo_prev.csv",usecols=["prob_winner","prob_loser","surface_Hard_winner_prev","surface_Hard_loser_prev","surface_Clay_winner_prev","surface_Clay_loser_prev","surface_Carpet_winner_prev","surface_Carpet_loser_prev","surface_Grass_winner_prev","surface_Grass_loser_prev"])
+# a = pd.read_csv("output_models/out_538_prev.csv",usecols=["Winner","Loser","y_250_5_0.4","k_prev_winner_250_5_0.4","k_prev_loser_250_5_0.4","prob_250_5_0.4","loser_prob_250_5_0.4","log_loss_250_5_0.4"])
+# # a.to_csv("output_models/out_538_optimal.csv")
 
-joined = a.join(c)
+# c = pd.read_csv("output_models/out_surface_elo_prev.csv",usecols=["prob_winner","prob_loser","surface_Hard_winner_prev","surface_Hard_loser_prev","surface_Clay_winner_prev","surface_Clay_loser_prev","surface_Carpet_winner_prev","surface_Carpet_loser_prev","surface_Grass_winner_prev","surface_Grass_loser_prev"])
 
-sigma = 0.85
+# joined = a.join(c)
 
-surface_fields = ["surface_Hard_winner_prev","surface_Hard_loser_prev","surface_Clay_winner_prev","surface_Clay_loser_prev","surface_Carpet_winner_prev","surface_Carpet_loser_prev","surface_Grass_winner_prev","surface_Grass_loser_prev"]
+# sigma = 0.85
+
+# surface_fields = ["surface_Hard_winner_prev","surface_Hard_loser_prev","surface_Clay_winner_prev","surface_Clay_loser_prev","surface_Carpet_winner_prev","surface_Carpet_loser_prev","surface_Grass_winner_prev","surface_Grass_loser_prev"]
 
 
-joined["combined_prob"] = sigma*joined["prob_250_5_0.4"] + (1-sigma)*joined["prob_winner"]
-for index, row in joined.iterrows():   
-    for surface in surface_fields:
-        if not pd.isna(row[surface]) and "winner" in surface:
-            joined.loc[index,"combined_winner_elo"] = sigma*row["k_prev_winner_250_5_0.4"] + (1-sigma)*row[surface]
-        if not pd.isna(row[surface]) and "loser" in surface:    
-            joined.loc[index,"combined_loser_elo"] = sigma*row["k_prev_loser_250_5_0.4"] + (1-sigma)*row[surface]
+# joined["combined_prob"] = sigma*joined["prob_250_5_0.4"] + (1-sigma)*joined["prob_winner"]
+# for index, row in joined.iterrows():   
+#     for surface in surface_fields:
+#         if not pd.isna(row[surface]) and "winner" in surface:
+#             joined.loc[index,"combined_winner_elo"] = sigma*row["k_prev_winner_250_5_0.4"] + (1-sigma)*row[surface]
+#         if not pd.isna(row[surface]) and "loser" in surface:    
+#             joined.loc[index,"combined_loser_elo"] = sigma*row["k_prev_loser_250_5_0.4"] + (1-sigma)*row[surface]
         
-joined["combined_elo_prob"] = joined.apply(lambda row: pi_i_j(row["combined_winner_elo"],row["combined_loser_elo"]),axis=1)
-# print(joined["combined_elo_prob"])
-# joined.to_csv("output_models/combined_surface.csv")
-# joined = pd.read_csv("output_models/combined_surface.csv")
-# print(joined["prob_winner"])
-sum_gr_0_5_raw = len(joined[(joined["prob_250_5_0.4"]>0.5)])
-sum_gr_0_5 = len(joined[(joined["combined_prob"]>0.5)])
-sum_gr_0_5_comb = len(joined[(joined["combined_elo_prob"]>0.5)])
 
-print(f"accuracy comb prob = {sum_gr_0_5/len(joined)}")
-print(f"accuracy raw = {sum_gr_0_5_raw/len(joined)}")
-print(f"accuracy comb elo= {sum_gr_0_5_comb/len(joined)}")
+# joined["combined_elo_prob"] = joined.apply(lambda row: pi_i_j(row["combined_winner_elo"],row["combined_loser_elo"]),axis=1)
+# joined["sum_elo"] = joined["combined_winner_elo"] - joined["combined_loser_elo"]
+# # print(joined["combined_elo_prob"])
+# # joined.to_csv("output_models/combined_surface.csv")
+# # joined = pd.read_csv("output_models/combined_surface.csv")
+# # print(joined["prob_winner"])
+# print(joined)
+# print(len(joined[joined.sum_elo == 0.0]))
+# joined = joined.drop(joined[joined.sum_elo == 0.0].index)
+# joined = joined.reset_index()
+# sum_gr_0_5_raw = len(joined[(joined["prob_250_5_0.4"]>0.5)])
+# sum_gr_0_5 = len(joined[(joined["combined_prob"]>0.5)])
+# sum_gr_0_5_comb = len(joined[(joined["combined_elo_prob"]>0.5)])
 
-for index, row in joined.iterrows():    
-   if(row["combined_prob"] >0.5 ):
-       joined.loc[index,"combined_log_loss"] = test_ll(1.0,row["combined_prob"])
-       # df.loc[index,"loser_prob"] = 1-prob
-   else:
-       joined.loc[index,"combined_log_loss"] = test_ll(0.0,1.0-row["combined_prob"])
+# print(f"accuracy comb prob = {sum_gr_0_5/len(joined)}")
+# print(f"accuracy raw = {sum_gr_0_5_raw/len(joined)}")
+# print(f"accuracy comb elo= {sum_gr_0_5_comb/len(joined)}")
 
-for index, row in joined.iterrows():    
-   if(row["combined_winner_elo"] > row["combined_loser_elo"]):
-       joined.loc[index,"combined_log_loss_elo"] = test_ll(1.0,row["combined_elo_prob"])
-       # df.loc[index,"loser_prob"] = 1-prob
-   else:
-       joined.loc[index,"combined_log_loss_elo"] = test_ll(0.0,1.0-row["combined_elo_prob"])
+# for index, row in joined.iterrows():    
+#    if(row["combined_prob"] >0.5 ):
+#        joined.loc[index,"combined_log_loss"] = test_ll(1.0,row["combined_prob"])
+#        # df.loc[index,"loser_prob"] = 1-prob
+#    else:
+#        joined.loc[index,"combined_log_loss"] = test_ll(0.0,1.0-row["combined_prob"])
 
-print(f"logloss comb prob = {np.mean(joined['combined_log_loss'])}")
-print(f"logloss = {np.mean(joined['log_loss_250_5_0.4'])}")
-print(f"logloss comb elo= {np.mean(joined['combined_log_loss_elo'])}")
+# for index, row in joined.iterrows():    
+#    if(row["combined_winner_elo"] > row["combined_loser_elo"]):
+#        joined.loc[index,"combined_log_loss_elo"] = test_ll(1.0,row["combined_elo_prob"])
+#        joined.loc[index,"actual"] = 1.0
+#        # df.loc[index,"loser_prob"] = 1-prob
+#    else:
+#        joined.loc[index,"combined_log_loss_elo"] = test_ll(0.0,1.0-row["combined_elo_prob"])
+#        joined.loc[index,"actual"] = 0.0
+
+# calbration_calc(joined,"combined_winner_elo","combined_loser_elo","combined_elo_prob")
+# print(f"logloss comb prob = {np.mean(joined['combined_log_loss'])}")
+# print(f"logloss = {np.mean(joined['log_loss_250_5_0.4'])}")
+# print(f"logloss comb elo= {np.mean(joined['combined_log_loss_elo'])}")
 
 # player = 'Federer R.'
 
 # player_plot = a.query(f"Winner == '{player}' or Loser == '{player}'")
 # player_plot = player_plot.reset_index()
 # player_plot["elo"] = player_plot[["Winner","Loser","k_winner_260_5_0.4","k_loser_260_5_0.4"]].apply(lambda x : x["k_winner_260_5_0.4"] if(x["Winner"] == player) else x["k_loser_260_5_0.4"], axis=1)
+
+# # player_plot["elo"] = player_plot[["Winner","Loser","k_winner_260_5_0.4","k_loser_260_5_0.4"]].apply(lambda x : x["k_winner_260_5_0.4"] if(x["Winner"] == player) else x["k_loser_260_5_0.4"], axis=1)
 # print(player_plot[["Winner","Loser","elo"]])
-# player_plot["elo"].plot()
-# plt.show()
-# print(c)
+# # player_plot["elo"].plot()
+# # plt.show()
+# # print(c)
 
-# # 0.0,0.4640522024570126,0.5359477975429874
-# # print(log_loss([0],[0.4640522024570126], labels=[0,]))
-# for i in range(start,stop+1,5):
-    
-#     sum_gr_0_5 = len(c[(c['prob_'+str(i)]>0.5)])
-#     print(f"k = {i} accuracy = {sum_gr_0_5/len(c)}")
+# # # 0.0,0.4640522024570126,0.5359477975429874
+# # # print(log_loss([0],[0.4640522024570126], labels=[0,]))
+# a = pd.read_csv("output_models/out_k.csv")
+# ranges = []
+# accuracy = []
+# ll = []
+# for i in range(5,100+1,5):    
+#     ranges.append(i)
+#     sum_gr_0_5 = len(a[(a['prob_'+str(i)]>0.5)])
+#     accuracy.append(sum_gr_0_5/len(a))
+#     ll.append(np.mean(a['log_loss_'+str(i)]))
+#     print(f"k = {i} accuracy = {sum_gr_0_5/len(a)}")
 #     # logloss = log_loss(c['y'],c['prob'], labels=[1.0,0.0])
-#     print(f"k = {i} logloss = {np.mean(c['log_loss_'+str(i)])}")
+#     print(f"k = {i} logloss = {np.mean(a['log_loss_'+str(i)])}")
 
+# # xs = [x for x in range(len(federer_k_list))]
+
+# plt.plot(ranges, accuracy, label = "Accuracy")
+# plt.plot(ranges, ll, label = "Log Loss")
+# plt.legend()
+# plt.show()
 # for i in range(start_curly,stop_curly+1,20):
 #     for j in range(start_v,stop_v+1,1):
 #         for k in stop_sigma:

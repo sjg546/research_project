@@ -23,7 +23,7 @@
 \usepackage{lastpage}
 \usepackage{fancyhdr}
 \usepackage{float}
-
+ 
 % PUT YOUR TITLE AND NAME HERE
 \newcommand{\titlestr}{Modelling the Outcome of Tennis Matches \\ Interim Report}
 \newcommand{\shorttitlestr}{Modelling Tennis Outcomes}
@@ -88,7 +88,7 @@
   Tennis is a multi-billion dollar industry with the outcome of both tournaments
   and individual matches having both enormous monetary ramifications' and impacts
   for player legacy.
-  Accurately predicting the outcome of tennis matches underpin
+  Accurately predicting the outcome of tennis matches under pin
   the tennis bookmaking industry. This leads to profit incentives both on
   the side of the bookmakers and on betters looking to "beat the odds".
   This report investigates various mathematical modelling methods to evaluate
@@ -101,21 +101,17 @@
   Future work will be outlined to incorporate more features of the dataset to improve
   the overall performance of the model. This performance was measured using accuracy,
   which is the proportion of guesses that were correct and log loss, which aims to
-  measure how confident the model is in its prediction.
+  measure how confident the model is in its prediction. Alongside the data used to
+  build and train these models, open source historical gambling odds were used to
+  benchmark the various models performances.
 
   The models investigated ranged from a simple logistics model through to
   several Elo based models. The simpler logistic model use more traditional statistical
   analysis methods for deriving model parameters whereas the Elo models rely on
-  predefined hyperparameters to influence the performance of the model.
-  It can be observed that the simpler models, ie logistic model or simply predicting
-  the higher ranked player outperforms the Elo models when they use unoptimised
-  hyperparameters. The log loss however tells a different story, although these
-  simpler models have a higher accuracy currently, the Elo models have a substantially
-  lower log loss value implying that the future work of tuning the hyperparameters of
-  the models should result in greatly improved prediction accuracy. The simpler models
-  however cannot be meaningfully modified to improve accuracy. Potential improvements
-  to the various models are explored including expanding the parameters used for the
-  logistic model and hyperparameter tuning for the various Elo models.
+  predefined hyperparameters to influence the performance of the model. Comparing and
+  contrasting these different approaches and their impact on prediction accuracy and
+  log loss was investigated in this report.
+
 \end{abstract}
 
 
@@ -137,19 +133,18 @@ Association of Tennis Professionals (ATP) and the Women's Tennis Association
 grand slams \cite{nag_tennis_2022}.  Theoretically the highest ranked player should beat
 the lower ranked player. However, it can be observed that between 1968 and 2023
 in the men's singles competition the higher ranked player wins approximately 66
-percent of the time as seen in Figure 1.
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[scale=1.5]{images/tennis_rank_base.png}
-  \caption{Model Accuracy Using WTA Rankings}
-  \label{fig:ranking1}
-\end{figure}
+percent of the time
 
 Implementing a mathematical model that can perform better translates into higher
 returns when matches are bet on or more certainty for companies when trying to
-predict forward for offering sponsorship opportunities. There are many approaches
-to mathematically model the outcome of tennis matches based on statistical analysis
+predict forward for offering sponsorship opportunities. To effectively measure
+the performance of a given model a benchmark for what is considered a "good" result
+must be used. For this report the Bookmakers Consensus model (BCM) was implemented which
+combines betting odds from a number of bookmakers to provide a probability of winning
+for each player in a given match. For reasons that will be discussed later, this
+model is unsuitable for the future match prediction problem however is useful as a
+benchmark validation tool.
+There are many approaches to mathematically model the outcome of tennis matches based on statistical analysis
 ranging from simplistic linear/logistical models to complex machine learning
 based models. This report investigated a subset of these models and identified
 which of these performed the best and what future work will be conducted to
@@ -161,12 +156,6 @@ how confident the various models are in its predictions. This log loss shows tha
 a lower accuracy (how many correct guesses), when it does make correct
 predictions it may be more confident than a naive model which will allow for
 further tuning to occur to increase the accuracy.
-\newline
-Based on the results outlined in this report future work will be outlined to
-improve the implemented models in order to achieve higher accuracy. As a part
-of this future work comparison of the implemented and optimised models against
-bookmaker predictions rating will be conducted.
-
 \noindent \hrulefill
 
 \clearpage
@@ -206,7 +195,10 @@ determine the probability of the higher ranked player winning. For the initial
 implementation the difference in rank points will be simply the difference
 between the points of the higher ranked player and the lower ranked player. This
 model is defined as;
-
+\\
+\\
+$\pi_i$ = probability of player winning \\
+$D_i$ = difference in rank points between player i and player j \\
 \begin{gather}
   logit(\pi_i) = log(\dfrac{\pi_i}{1-\pi_i}) = \beta_0 + \beta_1 D_i
 \end{gather}
@@ -255,23 +247,51 @@ value. Calulating the K value for the Five Thirty Eight model is done as follows
 $\delta$, $\nu$ and $\sigma$ are parameters that need to be tuned to find the
 optimal values. This optimisation is out of scope of this initial paper however will be
 investigated as future work.
-\subsubsection{Elo MMR Model}
-A novel approach to calculate a players ranking is a bayesian system resulting in an Elo-MMR
-(Massive, Monotonic and Robust) metric \cite{EloMMR2021}. This model uses a gaussian diffusion
-to underpin its predictions whilst also provides capability for a logistic performance
-model which limits the impact of outlier performances. It differs from other similar
-ranking systems such as Microsofts TrueSkill \cite{herbrich_trueskill_2006} by exposing
-internal properties and provides mathematical proofs for its optimisation.
-Models such as this tend to be vulnerable to volatility farming which is the act of a
-player intentionally tanking their rating such that later improved performance will
-improve their overall rating due to the models perceived increased player volatility
-rating. This models high level implementation can be seen in Figure 2.
-\begin{figure}[H]
-  \centering
-  \includegraphics{images/elommr.PNG}
-  \caption{Elo-MMR Definition}
-  \label{fig:elommr}
-\end{figure}
+
+\subsubsection{Bookmakers Consensus Model}
+The BCM takes the odds from different bookmakers in order to
+converge on a quorum estimate of match probabilities \cite{BCM}. In the United Kingdom where
+the data is from, bookmakers represent the odds of a given outcome as a float value.
+This float value represents the amount won if the predicted outcome occurs. For example if
+a player has odds of winning of 1.3 then for every one hundred dollars bet, the better
+would receive one hundred and thirty dollars if the outcome occurs. The BCM begins by calculating the probabilities of player $\alpha$ and $\beta$
+winning the given match. This probability is found to be $\pi_1 = 1/\alpha$ and $\pi_2=1/\beta$.
+Intuitively it would be expected that adding these probabilities would result in a
+total value of 1.0. This is not the case due to over round which is a method used
+by the companies to maximise their profits. To address this the probabilities must be
+normalised. Normalising for player 1 is
+\begin{gather}
+  \pi_1 = \dfrac{\pi_1}{\pi_1+\pi_2}
+\end{gather}
+then substituting the odds
+\begin{gather}
+  \pi_1 = \dfrac{1/\alpha}{1/\alpha+1/\beta}
+\end{gather}
+The same is done for player two is done and is
+\begin{gather}
+  \pi_2 = \dfrac{1/\beta}{1/\alpha+1/\beta}
+\end{gather}
+Since this is a BCM a set of bookmaker odds for any given match
+need to be considered. For each $k$ company in the set of length $N$, the odds of player 1 and player 2
+winning a given match according to the $k$th company, defined as $\pi_{k,1}$ and $\pi_{k,2}$
+can be found as
+\begin{gather}
+  \pi_{k,1} = \dfrac{\beta_k}{\alpha_k+\beta_k}\;\;and\;\;\pi_{k,2} = \dfrac{\alpha_k}{\alpha_k+\beta_k}
+\end{gather}
+The BCM finds a type of mean probabilities across all the companies with published odds
+and this is defined as
+\begin{gather}
+  logit(\pi_1) = \dfrac{1}{N}\sum_{k=1}^{N}logit(\pi_{k,1})
+\end{gather}
+This equation can be inverted using the definition of the $logit$ function
+\begin{gather}
+  logit(\pi_1) = log(\dfrac{\pi_1}{1-\pi_1})
+\end{gather}
+which can be used to obtain
+\begin{gather}
+  \pi_1 = \dfrac{e^y}{1+e^y}
+\end{gather}
+where $y$ = $logit(\pi_1)$.
 
 \subsection{Performance Metrics}
 Measuring the performance of the different mathematical models will be done using
@@ -299,6 +319,13 @@ The overall log loss of the model is defined as.
 \end{gather}
 which calculates the average log loss value of all the individual match outcomes
 and is the final value used to evaluate the log loss performance of the model.
+\\
+\\
+Finally, model calibration will be done to ensure that the estimated class probabilities
+are consistent with what would naturally occur \cite{Ruiz_2022}. For this project
+the different probabilities of a player winning based on the difference in the various
+ratings was calculated. The actual matches at these various ranking differences were
+then plotted to check that they were reasonably similar to the expected outcome.
 \clearpage
 
 \section{Method}
@@ -320,7 +347,8 @@ impact an individual game has on the overall model the potential impact of this 
 relatively minimal.
 
 \subsection{Dataset}
-The data used for this investigation is the Tennis Rankings, Results and Stats open-source
+Two key datasets were used for this investigation. The first
+is the Tennis Rankings, Results and Stats open-source
 Github repository\cite{sackmann_jeffsackmanntennis_atp_2024} provided by Jeff Sackman.
 This dataset contains
 statistical information for men's and women's professional tennis including singles and
@@ -331,8 +359,20 @@ tennis matches. Investigating the impact of these features will be investigated 
 work. The dataset is split up based on year and competition type, e.g. men's
 singles. For this investigation the focus will be on the men's singles competition.
 Dealing with missing information within the dataset will be handled by omitting matches
-which don't have all information required for the model to run. Future work will include
-alternative approaches to handling models when required information is missing.
+which don't have all information required for the model to run.
+\\
+\\
+The other dataset is the Tennis Data UK \cite{tennis_data_uk} dataset which contains a
+smaller subset of usable fields then the Jeff Sackmann data, however contains betting
+odds for all professional tennis matches between the years of 2001 to the present. This
+project was able to use features from both datasets by first merging them. This process
+involved selecting common fields from both datasets and doing a join based on the selected
+fields. Winner rank points, loser rank points and location were the fields chosen due to
+the differences in recording methods used for player names and the differences in the match
+played dates which was potentially due to the differences in time zones of the recorders.
+Some modifications had to be done to align the location names of various tournaments due
+to sponsor changes and shifting tournament names that were captured in one of the datasets
+but not the other.
 
 \subsection{Logistic Model}
 As mentioned above, the slopes for the logistic model are
@@ -348,9 +388,9 @@ outputs of predicted values against this model are.
 This parameter was found to be $\theta = 0.000565$. As a
 result of this the Logistic Model can be defined as follows.
 \begin{gather}
-  P = -\dfrac{1}{1+e^{-0.000565x}}
+  \pi_i = -\dfrac{1}{1+e^{-0.000565D_i}}
 \end{gather}
-where $x$ is the point difference between the two players. Applying this model
+Applying this model
 to each match where both players have rank points will generate the results
 required to calculate both accuracy and log loss. As well as this,
 altering the threshold to only provide a prediction if the calculated probability
@@ -376,32 +416,51 @@ the optimal values.
 The initial values will be set to $(\delta,\nu,\sigma) = (100,5,0.1)$. Future
 work will be to utilise hyperparameter tuning methods to find the optimal values.
 
-\subsection{Elo MMR Model}
-Due to the complexity of the Elo MMR model the aim for this report is to
-analyse the default implementations effectiveness when applied to the tennis prediction
-problem. Similar to the Five Thirty Eight model future work will be conducted
-to find optimal hyperparameters and improve performance if applicable. Currently the
-implementation being used for this model is a three step process. First, parsing the data
-to generate a separate file for each tournament and ranking the performance of each player
-that competed. This ranking will be determined by the total number of games won within
-that individual tournament. The number of games played is a good measure of performance
-for a player as the more games played can be directly tied to how far in a tournament they
-progressed. The players will be given a ranking from one to n where
-n is the number of players who competed in a specific tournament. Once these separate files
-have been generated, these files will be considered a single round in the context of the
-Elo-MMR model \cite{EloMMR2021}. The model will then iterate over each tournament and
-provide a set of rankings for the players. These rankings will be output as a map of
-player names to player ranks at a specific date. Finally the prediction work will be
-completed which involves iterating over the initial dataset, using the player ranks at
-the date of the match to predict the outcome. If either of the players dont have a rating,
-ie it is their first match, a baseline rank of 1500 will be used. Since these results
-will be loaded into a map of tournament dates and player rankings at that time, the model
-will be capable of using a players current rating value to determine the probability of them
-winning the match.
-
-
+\subsection{Surface Augmented Five Thirty Eight Model}
+An extension to the Five Thirty Eight model was implemented which calculates a set of
+Elo scores for each player on each surface. These scores are calculated using the
+Five Thirty Eight model by calculating a probability that each player would win on the
+given surface. This probability is then used to update the Elo rating fore each player
+on the given surface. As a standalone model, these surface Elo ratings capture such a
+small amount of information that prediction ability is minimal. These surface Elo's were
+combined with the base Five Thirty Eight model as an augmentation.
+The optimal method of combining these surface models was investigated. A defined weighting
+value $\gamma$ was used to influence what proportion of the final model output was
+the Five Thirty Eight model and what was the Surface model. The first approach of
+combining these models was taking the calculated probability of player 1 winning, $p_1$,
+from each models and combining them to generate a new probability $p_{1,combined}$ based
+on the weighting factor
+\begin{gather}
+  \pi_{1,combined} = \gamma*\pi_{1,fivethirtheight} + (1-\gamma)*\pi_{1,surface}
+\end{gather}
+The other approach was to combine the Elo scores produced by each model for each match
+using the $\gamma$ weighting factor with the Five Thirty Eight Elo rating at match $T$
+defined as $E_{fivethirtyeight}(T)$ and the surface Elo at match $T$, $E_{surface}(T)$,
+the combined Elo rating, $E_{combined}(T)$, can be calculated using the $\gamma$ value As
+\begin{gather}
+  E_{combined}(T) = \gamma*E_{fivethirtyeight}(T) + (1-\gamma)*E_{surface}(T)
+\end{gather}
+Then using the same formula from (3) to calculate $\pi_{ij}$ the probability of player
+1 beating player 2 can be found
 \clearpage
 \section{Results}
+\begin{center}
+  \begin{tabular}{||c c c||}
+    \hline
+    Model                                     & Accuracy & Log Loss \\
+    \hline\hline
+    Higher Rank                               & 0.660    & NA       \\
+    Logistic Regression                       & 0.639    & 0.634    \\
+    K Factor                                  & 0.661    & 0.613    \\
+    Five Thirty Eight                         & 0.662    & 0.614    \\
+    Surface Elo                               & 0.598    & 0.722    \\
+    Five Thirty Eight - Surface Combined Elo  & 0.663    & 0.614    \\
+    Five Thirty Eight - Surface Combined Prob & 0.663    & 0.612    \\
+    Bookmakers Consensus                      & 0.695    & 0.575    \\
+    \hline
+  \end{tabular}
+\end{center}
+
 \subsection{Logistic Model}
 Running the logistic model provides the below output
 \begin{center}
@@ -431,16 +490,16 @@ below shows the accuracy and log loss for each value of K.
     \hline
     K Value & Accuracy & Log Loss \\
     \hline\hline
-    5       & 0.606    & 0.466    \\
-    10      & 0.601    & 0.383    \\
-    15      & 0.598    & 0.333    \\
-    20      & 0.594    & 0.298    \\
-    25      & 0.592    & 0.272    \\
-    30      & 0.590    & 0.251    \\
-    35      & 0.589    & 0.234    \\
-    40      & 0.587    & 0.220    \\
-    45      & 0.585    & 0.208    \\
-    50      & 0.584    & 0.197    \\
+    5       & 0.639    & 0.631    \\
+    10      & 0.648    & 0.619    \\
+    15      & 0.653    & 0.614    \\
+    20      & 0.655    & 0.613    \\
+    25      & 0.657    & 0.612    \\
+    30      & 0.658    & 0.613    \\
+    35      & 0.657    & 0.615    \\
+    40      & 0.658    & 0.620    \\
+    45      & 0.659    & 0.623    \\
+    50      & 0.659    & 0.627    \\
     \hline
   \end{tabular}
 \end{center}
@@ -485,26 +544,6 @@ This plot looks almost identical to the K Factor ranking for Federer which expla
 accuracy of the models is quite similar. The Five Thirty Eight model has Federer having a
 higher peak rating with a marginally higher rate of change when outlier performances occur.
 
-\subsection{Elo-MMR Model}
-A baseline implementation of the Elo-MMR model has been implemented to set a baseline for
-future work to build on. The model produced an accuracy of 0.635 with a log loss of 0.533.
-This model outperformed the other Elo models in accuracy with a significantly worse log loss.
-Due to the complexity of the model there are many reasons why the model lacks confidence
-in its predictions. By plotting the performance of a known high performing player, Roger Federer,
-deficiencies in the model can be observed.
-
-\begin{figure}[H]
-  \includegraphics[scale=0.6]{images/federer.png}
-  \caption{Elo-MMR Federer Rank Over Time}
-  \label{fig:federer-elo-mmr}
-\end{figure}
-
-From the above plot, it can be observed that the model is extremely punitive for a player
-if their performance early in their career is poor and doesn't appropriately rate higher
-performances to compensate. Future work will include investigating methods of considering
-the difficulty in reaching higher rounds of a tournament and updating the players rank to
-more accurately reflect that.
-
 \vspace{10mm}
 \noindent \hrulefill
 
@@ -521,8 +560,7 @@ extend this model to include other parameters present in the dataset
 
 The current implementations of the various Elo models captures a similar trajectory in a
 players career. This can be observed by overlaying the two Elo models which are updated
-on a game by game basis, K Factor and Five Thirty Eight. The Elo-MMR model is calculated
-on a tournament basis so cannot be overlaid simply on the same plot.
+on a game by game basis, K Factor and Five Thirty Eight.
 \begin{figure}[H]
   \includegraphics[scale=0.8]{images/federer_comparison.png}
   \caption{K Factor vs Five Thirty Eight}
@@ -538,22 +576,6 @@ the improvement is picked up earlier in the Five Thirty Eight model when compare
 K Factor model. This results in the model reaching a steady state that accurately reflects
 Federers skill earlier than the K Factor model which when optimal parameters are identified
 should result in a higher overall accuracy.
-
-The Elo-MMR model accurately captures the trajectory of Federers career as shown in Figure 6.
-This model seems to not appropriately reward a player for excellent performance in a tournament
-and is extremely confident in its initial rating of a player. From the models calculated
-ratings, this results in a large percentage of the players having ratings that is around
-the same values. As a result the models predictions is often based on very similar player
-ratings. By more accurately capturing performance in tournaments and incorporating that
-in to rating updates there will be more variance in player ratings resulting in more
-accurate predictions. The current approach for rating performance for a specific tournament
-is to assign a rank based on the round reached within the tournament. This results in an
-accurate rating for the first and second best performing players in the tournament as they
-are the ones who made it to the final. The issue arises when ranking players who get eliminated
-in earlier rounds. The losers of the semi-finals will be tied for the third-best performance
-in the tournament. This becomes a problem when considering earlier rounds as the number of
-players with the same performance increases exponentially. Alternative approaches for more
-accurately capturing a players performance at a tournament will be expanded in future work.
 
 Currently, all the models in their current states have significantly lowered prediction accuracy
 than the simple approach of making a prediction solely based on the players ATP rank.
@@ -580,31 +602,6 @@ these hyperparameters is infeasible. There are many methods of optimisation for
 hyperparameter search \cite{claesen_hyperparameter_2015} and investigating the
 most appropriate one for optimising the Elo model parameters will form the basis of
 future work for improving the Five Thirty Eight model.
-
-From the results of the Elo-MMR model there are multiple opportunities for optimisation.
-By plotting the score of a single player known to have a higher than average performance
-across a long period of time, Roger Federer, deficiencies in the model performance can be
-identified. Initial observations indicate that the model becomes heavily confident in
-its predictions based on player performance early in their career. This results in reducing
-the rate of change of a player ranking for matches later in their career. The problem
-with this is player performance early in a career is most likely lower than once they
-get more experienced in professional play. Currently, the Elo-MMR model is updated for each
-player after each tournament. To combat the issue of overconfidence in the model based
-on early career performance, the players initial ranking will be produced from a set of their
-first n matches or the first n tournaments. Various values of this initial bucket size
-will be investigated to
-optimise between model confidence and maximising the number of matches with a player ranking.
-An investigation will also be conducted to determine the models' performance if instead of
-updating the ratings on a tournament basis instead it is done on a game by game basis
-like the other Elo models. The risk of implementing the model in this way is that the
-identified issue of over-confidence based on early career performance could be increased.
-The current implementation of the model defaults to the ATP rankings of the players if
-both players dont have a valid Elo-MMR ranking. By increasing the required number of games
-played by a player before calculating a Elo-MMR rank the number of games that will default
-to the ATP rankings will increase. This potentially reduces the accuracy of the model and
-needs to be minimised. The other optimisation that will be investigated is instead of updating the Elo-MMR after
-every tournament, the players rank will be updated after n amount of tournaments.
-This will result in a higher confidence in the update of the model ranking.
 
 The current method of determining whether any of these Elo models have produced a correct
 prediction is by determining if the probability of player i beating player j is greater
@@ -654,12 +651,7 @@ the basic logistic model. Differences in the ratings' of an individual player
 generated by the individual models shows that they all succeed in capturing the overall
 trajectory of a players career. The different Elo models update the player ratings at
 different rates based on performance. Having the model accurately update these ratings
-is the key to maximising accuracy whilst minimising log loss. The more complex Elo models
-such as the Five Thirty Eight and the Elo-MMR provide more mechanisms for tuning than the
-simpler ones such as the K Factor model. This comes at the cost of model complexity as
-incorrectly configured models can have a massive impact on its performance. Balancing
-the need to optimise the models to solve the given problem with model complexity will
-be investigated in future work.
+is the key to maximising accuracy whilst minimising log loss.
 
 \clearpage
 

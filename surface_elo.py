@@ -8,13 +8,13 @@ class Player():
         self.surface_elo = {}
 
 class SurfaceElo():
-    def __init__(self, surface_types):
+    def __init__(self, surface_types,curly=250,v=5,sigma=0.4):
         self._initial_score = 1500
         self._player_map:dict[str:Player] = {}
         self._weight = 1
-        self._sigma = 0.4
-        self._v = 5
-        self._curly = 250
+        self._sigma = sigma
+        self._v = v
+        self._curly = curly
         self._match_count = 0
         self._log_loss_list = []
         self._federer_rank = []
@@ -128,3 +128,57 @@ class SurfaceElo():
             df.loc[index,'prob_loser'] = 1 - prob        
         
         return df
+    def pi_i_j_2(self,winner ,loser):
+        return math.pow((1+ math.pow(10,(loser-winner)/400)) ,-1)
+
+    def test_ll(self,y,prob):
+        if y == prob:
+            return 0.0
+        if y == 0.0 and prob == 1.0:
+            return 0.0
+            
+        return -1* ((y * math.log(prob)) + ((1-y)*math.log(1-prob)))
+   
+    def run_metrics(self,df:pd.DataFrame,sigma,prob):
+        five_thirty_eight_output = pd.read_csv("output_models/temp_538.csv", usecols=["Winner","Loser",
+                                                                                          f"y_{self._curly}_{self._v}_{self._sigma}",f"k_prev_winner_{self._curly}_{self._v}_{self._sigma}",
+                                                                                          f"k_prev_loser_{self._curly}_{self._v}_{self._sigma}",f"prob_{self._curly}_{self._v}_{self._sigma}",
+                                                                                          f"loser_prob_{self._curly}_{self._v}_{self._sigma}",f"log_loss_{self._curly}_{self._v}_{self._sigma}"])
+
+        worked_df = df[["prob_winner","prob_loser","surface_Hard_winner_prev","surface_Hard_loser_prev","surface_Clay_winner_prev","surface_Clay_loser_prev","surface_Carpet_winner_prev","surface_Carpet_loser_prev","surface_Grass_winner_prev","surface_Grass_loser_prev"]]
+        joined = five_thirty_eight_output.join(worked_df)
+
+        surface_fields = ["surface_Hard_winner_prev","surface_Hard_loser_prev","surface_Clay_winner_prev","surface_Clay_loser_prev","surface_Carpet_winner_prev","surface_Carpet_loser_prev","surface_Grass_winner_prev","surface_Grass_loser_prev"]
+        
+        if not prob:
+            for index, row in joined.iterrows():   
+                for surface in surface_fields:
+                    if not pd.isna(row[surface]) and "winner" in surface:
+                        joined.loc[index,"combined_winner_elo"] = sigma*row[f"k_prev_winner_{self._curly}_{self._v}_{self._sigma}"] + (1-sigma)*row[surface]
+                    if not pd.isna(row[surface]) and "loser" in surface:    
+                        joined.loc[index,"combined_loser_elo"] = sigma*row[f"k_prev_loser_{self._curly}_{self._v}_{self._sigma}"] + (1-sigma)*row[surface]
+            joined["combined_prob"] = joined.apply(lambda row: self.pi_i_j_2(row["combined_winner_elo"],row["combined_loser_elo"]),axis=1)
+            joined["sum_elo"] = joined["combined_winner_elo"] - joined["combined_loser_elo"]
+            joined = joined.drop(joined[joined.sum_elo == 0.0].index)
+            joined = joined.reset_index()
+
+        else:
+            joined["combined_prob"] = sigma*joined[f"prob_{self._curly}_{self._v}_{self._sigma}"] + (1-sigma)*joined["prob_winner"]
+
+        for index, row in joined.iterrows():    
+            if(row["combined_prob"] >0.5 ):
+                joined.loc[index,"combined_log_loss"] = self.test_ll(1.0,row["combined_prob"])
+                # df.loc[index,"loser_prob"] = 1-prob
+            else:
+                joined.loc[index,"combined_log_loss"] = self.test_ll(0.0,1.0-row["combined_prob"])
+
+        if(row["combined_prob"] < 0.5 ):
+            joined.loc[index,"predicted"] = 0.0
+        else:
+            joined.loc[index,"predicted"] = 1.0
+
+        correct_predictions = len(joined[joined["combined_prob"] > 0.5])
+        total_predictions = len(joined["combined_prob"])
+
+        print(f"Surface Elo Prob, Delta={self._curly}, Nu={self._v}, Sigma={self._sigma}, Accuracy = {correct_predictions/total_predictions}")
+        print(f"Surface Elo Prob, Delta={self._curly}, Nu={self._v}, Sigma={self._sigma}, Logloss = {np.mean(joined['combined_log_loss'])}")
