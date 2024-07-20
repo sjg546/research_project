@@ -142,6 +142,7 @@ class SurfaceElo():
     def run_metrics(self,df:pd.DataFrame,sigma,prob):
         five_thirty_eight_output = pd.read_csv("output_models/temp_538.csv", usecols=["Winner","Loser",
                                                                                           f"y_{self._curly}_{self._v}_{self._sigma}",f"k_prev_winner_{self._curly}_{self._v}_{self._sigma}",
+                                                                                          f"k_winner_{self._curly}_{self._v}_{self._sigma}",f"k_loser_{self._curly}_{self._v}_{self._sigma}",
                                                                                           f"k_prev_loser_{self._curly}_{self._v}_{self._sigma}",f"prob_{self._curly}_{self._v}_{self._sigma}",
                                                                                           f"loser_prob_{self._curly}_{self._v}_{self._sigma}",f"log_loss_{self._curly}_{self._v}_{self._sigma}"])
 
@@ -155,12 +156,16 @@ class SurfaceElo():
                 for surface in surface_fields:
                     if not pd.isna(row[surface]) and "winner" in surface:
                         joined.loc[index,"combined_winner_elo"] = sigma*row[f"k_prev_winner_{self._curly}_{self._v}_{self._sigma}"] + (1-sigma)*row[surface]
+                        joined.loc[index,"combined_future_winner_elo"] = sigma*row[f"k_winner_{self._curly}_{self._v}_{self._sigma}"] + (1-sigma)*row[surface]
+
                     if not pd.isna(row[surface]) and "loser" in surface:    
                         joined.loc[index,"combined_loser_elo"] = sigma*row[f"k_prev_loser_{self._curly}_{self._v}_{self._sigma}"] + (1-sigma)*row[surface]
+                        joined.loc[index,"combined_future_loser_elo"] = sigma*row[f"k_loser_{self._curly}_{self._v}_{self._sigma}"] + (1-sigma)*row[surface]
+
             joined["combined_prob"] = joined.apply(lambda row: self.pi_i_j_2(row["combined_winner_elo"],row["combined_loser_elo"]),axis=1)
             joined["sum_elo"] = joined["combined_winner_elo"] - joined["combined_loser_elo"]
-            joined = joined.drop(joined[joined.sum_elo == 0.0].index)
-            joined = joined.reset_index()
+            # joined = joined.drop(joined[joined.sum_elo == 0.0].index)
+            # joined = joined.reset_index()
 
         else:
             joined["combined_prob"] = sigma*joined[f"prob_{self._curly}_{self._v}_{self._sigma}"] + (1-sigma)*joined["prob_winner"]
@@ -179,6 +184,9 @@ class SurfaceElo():
 
         correct_predictions = len(joined[joined["combined_prob"] > 0.5])
         total_predictions = len(joined["combined_prob"])
-
+        total_prob = np.sum(joined["combined_prob"])
+        print(f"Surface Elo Prob, Delta={self._curly}, Nu={self._v}, Sigma={self._sigma}, Calibration = {total_prob/correct_predictions}")
         print(f"Surface Elo Prob, Delta={self._curly}, Nu={self._v}, Sigma={self._sigma}, Accuracy = {correct_predictions/total_predictions}")
         print(f"Surface Elo Prob, Delta={self._curly}, Nu={self._v}, Sigma={self._sigma}, Logloss = {np.mean(joined['combined_log_loss'])}")
+        
+        return joined

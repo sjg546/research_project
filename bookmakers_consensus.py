@@ -80,6 +80,8 @@ class BookmakersConsensus():
            else:
               df.loc[index,"predicted"] = 1.0
 
+        total_prob = np.sum(df[f"p1"])
+        print(f"BM Calibration = {total_prob/len(df[df.p1 > 0.5])}")
         print(f"BM Accuracy = {len(df[df.p1 > 0.5])/len(df['p1'])}")
         print(f"BM Logloss = {np.mean(df['combined_log_loss'])}")
             

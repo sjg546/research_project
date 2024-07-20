@@ -146,8 +146,8 @@ class FiveThirtyEight():
    
     def run_metrics(self,df:pd.DataFrame,delta,nu,sigma):
         print(len(df[df[f"prob_{delta}_{nu}_{sigma}"] == 0.5]))
-        df = df.drop(df[df[f"prob_{delta}_{nu}_{sigma}"] == 0.5].index)
-        df = df.reset_index()
+        # df = df.drop(df[df[f"prob_{delta}_{nu}_{sigma}"] == 0.5].index)
+        # df = df.reset_index()
         df["actual"] = 1.0
         for index, row in df.iterrows():
            if(row[f"prob_{delta}_{nu}_{sigma}"] > 0.5 ):
@@ -162,5 +162,8 @@ class FiveThirtyEight():
               df.loc[index,"predicted"] = 1.0
         correct_predictions = len(df[df[f"prob_{delta}_{nu}_{sigma}"] > 0.5])
         total_predictions = len(df[f"prob_{delta}_{nu}_{sigma}"])
+        total_prob = np.sum(df[f"prob_{delta}_{nu}_{sigma}"])
+
+        print(f"Five Thirty Eight, Delta={delta}, Nu={nu}, Sigma={sigma}, Calibration = {total_prob/correct_predictions}")
         print(f"Five Thirty Eight, Delta={delta}, Nu={nu}, Sigma={sigma}, Accuracy = {correct_predictions/total_predictions}")
         print(f"Five Thirty Eight, Delta={delta}, Nu={nu}, Sigma={sigma}, Logloss = {np.mean(df['combined_log_loss'])}")

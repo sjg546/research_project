@@ -170,6 +170,9 @@ class KFactor():
               df.loc[index,"predicted"] = 1.0
         correct_predictions = len(df[df[f"prob_{k}"] > 0.5])
         total_predictions = len(df[f"prob_{k}"])
+        total_prob = np.sum(df[f"prob_{k}"])
+        
+        print(f"K Factor, K={k}, Calibration = {total_prob/correct_predictions}")
         print(f"K Factor, K={k}, Accuracy = {correct_predictions/total_predictions}")
         print(f"K Factor, K={k}, Logloss = {np.mean(df['combined_log_loss'])}")
     

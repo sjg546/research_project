@@ -295,7 +295,7 @@ where $y$ = $logit(\pi_1)$.
 
 \subsection{Performance Metrics}
 Measuring the performance of the different mathematical models will be done using
-two metrics, Accuracy and Log Loss. Accuracy is how many of the matches played
+three metrics, Accuracy, Log Loss and Calibration. Accuracy is how many of the matches played
 did the model accurately predict the correct outcome. Notionally this metric is
 defined as follows.
 \begin{gather}
@@ -321,11 +321,16 @@ which calculates the average log loss value of all the individual match outcomes
 and is the final value used to evaluate the log loss performance of the model.
 \\
 \\
-Finally, model calibration will be done to ensure that the estimated class probabilities
-are consistent with what would naturally occur \cite{Ruiz_2022}. For this project
-the different probabilities of a player winning based on the difference in the various
-ratings was calculated. The actual matches at these various ranking differences were
-then plotted to check that they were reasonably similar to the expected outcome.
+Finally, model calibration, $C$, is defined as follows
+\begin{gather}
+  C = \dfrac{1}{W}\sum_{i=1}^{N}\pi_i
+\end{gather}
+with $W$ being the number of games won by the higher ranked player and $pi_i$ is the
+probability of the higher ranked player winning. Calibration aims to measure the rate
+at which the higher ranked player wins. If the model is well calibrated then $C \approx 1$,
+if $C > 1$ then the model overestimates the wins of the highest ranked player and if
+$C < 1$ then the model underestimates the wins.
+
 \clearpage
 
 \section{Method}
@@ -444,35 +449,47 @@ Then using the same formula from (3) to calculate $\pi_{ij}$ the probability of 
 1 beating player 2 can be found
 \clearpage
 \section{Results}
-\begin{center}
-  \begin{tabular}{||c c c||}
-    \hline
-    Model                                     & Accuracy & Log Loss \\
-    \hline\hline
-    Higher Rank                               & 0.660    & NA       \\
-    Logistic Regression                       & 0.639    & 0.634    \\
-    K Factor                                  & 0.661    & 0.613    \\
-    Five Thirty Eight                         & 0.662    & 0.614    \\
-    Surface Elo                               & 0.598    & 0.722    \\
-    Five Thirty Eight - Surface Combined Elo  & 0.663    & 0.614    \\
-    Five Thirty Eight - Surface Combined Prob & 0.663    & 0.612    \\
-    Bookmakers Consensus                      & 0.695    & 0.575    \\
-    \hline
-  \end{tabular}
-\end{center}
-
-\subsection{Logistic Model}
-Running the logistic model provides the below output
-\begin{center}
+After building and testing the different models, the metrics for each have been displayed
+in Table 1. In the following section the methods for optimising the resulting metrics
+will be explored. From Table 1 it can be observed that the best performing model was the
+Bookmakers Consensus model with the highest accuracy and lowest log loss. Although it did
+have a marginally worse calibration. Out of the models appropriate for predicting match
+outcomes, the Surface Combined Elo models performed the best with the different methods for
+including the surface information resulting in a negligible difference in calculated metrics.
+\begin{table}[h]
   \begin{tabular}{||c c c c||}
     \hline
-    Correct & Incorrect \\
+    Model                                     & Accuracy & Log Loss & Calibration \\
     \hline\hline
-    68084   & 38486     \\
+    Higher Rank                               & 0.660    & NA       & NA          \\
+    Logistic Regression                       & 0.639    & 0.634    & 0.867       \\
+    K Factor                                  & 0.658    & 0.613    & 0.889       \\
+    Five Thirty Eight                         & 0.662    & 0.614    & 0.897       \\
+    Surface Elo                               & 0.598    & 0.722    & 0.944       \\
+    Five Thirty Eight - Surface Combined Elo  & 0.663    & 0.614    & 0.893       \\
+    Five Thirty Eight - Surface Combined Prob & 0.663    & 0.612    & 0.892       \\
+    Bookmakers Consensus                      & 0.695    & 0.575    & 0.863       \\
     \hline
   \end{tabular}
-\end{center}
-For an overall accuracy value of 0.639. The corresponding log loss for this model is 0.481.
+  \caption{Metrics for all investigated models showing that the best performing model was
+    the Bookmakers Consensus and the best overall predictive model being either of the
+    Surface Combined Elo models}
+\end{table}
+\subsection{Logistic Model}
+Running the logistic model provides the below output
+\begin{table}[h]
+  \centering
+  \begin{tabular}{||c c c c c||}
+    \hline
+    Accuracy & Log Loss & Calibration & Correct & Incorrect \\
+    \hline\hline
+    0.639    & 0.634    & 0.867       & 68084   & 38486     \\
+    \hline
+  \end{tabular}
+  \caption{Generated metrics for the Logistic Regression Model}
+\end{table}
+
+For an overall accuracy value of 0.639. The corresponding log loss for this model is 0.634.
 With an accuracy lower than simply using the player ATP rank to predict the outcome of a
 match the model in this form has definite room for improvement. Since the predictions of
 this model in its current form is based solely on the difference between the players rank
@@ -485,8 +502,9 @@ The K Factor model provides one parameter that can be adjusted to alter the mode
 This K value impacts both the accuracy and the log loss produced from the model. The table
 below shows the accuracy and log loss for each value of K.
 
-\begin{center}
-  \begin{tabular}{||c c c c||}
+\begin{table}[h]
+  \centering
+  \begin{tabular}{||c c c||}
     \hline
     K Value & Accuracy & Log Loss \\
     \hline\hline
@@ -502,7 +520,9 @@ below shows the accuracy and log loss for each value of K.
     50      & 0.659    & 0.627    \\
     \hline
   \end{tabular}
-\end{center}
+  \caption{K value tuning to find the optimal value based on Accuracy and Log Loss, It
+    can be observed that the optimal value is K=30}
+\end{table}
 From the results above it can be observed that as the K value increases, the log loss decreases.
 This, however, corresponds with a decline in the models overall accuracy. As this model
 does not consider the past performance of the players when updating their corresponding
@@ -523,15 +543,21 @@ towards the end of his career before his retirement.
 
 \subsection{Five Thirty Eight Model}
 As discussed in the Method section of this report the Five Thirty Eight model relies on
-three hyperparameters to define the model. The values $(\delta,\nu,\sigma) = (100,5,0.1)$
-are known to be suboptimal, and the following results are just to demonstrate in initial
-implementation.
+three hyperparameters to define the model. The values $(\delta,\nu,\sigma) = (240,5,0.4)$
+were determined after completing a broad grid search across all permutations for $delta$
+between the values of 100 and 300 with a step increment of 20, $\nu$ between the values of
+1 and 10 with a step increment of 1 and $\sigma$ between the values of 0.1 and 1 with a
+step increment of 0.1. This involved building and testing a thousand different models
+and generating summary statistics for all of them. Although more advanced methods of
+hyperparameter tuning could have been implemented the results of this broad grid search
+showed that the optimal values for accuracy and log loss were maximised at the given values
+and align closely with values published in existing literature \cite{kovalchik_searching_2016}
+
 Running the Five Thirty Eight model with these parameters provides an accuracy value of
-0.577 and an overall log loss of 0.167. This shows similar performance to the K Factor model
+0.622 and an overall log loss of 0.614. This shows higher accuracy when compared
+to the K Factor model
 with a lower corresponding log loss value implying a higher confidence in the models predictions.
-Hyperparameter optimisation should improve the performance of this model further and this
-will be expanded further in the future work section of this report. Similar to the K Factor
-result, the career ranking of Roger Federer has been plotted below.
+Similar to the K Factor result, the career ranking of Roger Federer has been plotted below.
 
 \begin{figure}[H]
   \centering
@@ -544,19 +570,67 @@ This plot looks almost identical to the K Factor ranking for Federer which expla
 accuracy of the models is quite similar. The Five Thirty Eight model has Federer having a
 higher peak rating with a marginally higher rate of change when outlier performances occur.
 
-\vspace{10mm}
-\noindent \hrulefill
+\subsection{Surface Combined Five Thirty Eight Model}
+As discussed in the method section, the existing Five Thirty Eight model was augmented
+with a separate Elo rating generated for each player on each surface type. From Table 1
+it can be observed that the Accuracy was identical for both methods of combining the models
+sitting at $0.663$ with Log Loss and calibration both having a negligible difference
+$\approx 0.002$. When looking at the Surface Elo model that hasnt been combined with an
+optimised Five Thirty Eight model, it can be observed that its performance is significantly
+worse than any of the other models in all metrics excluding calibration. Discussion into why
+this is the case will be done later in this report.
 
-\clearpage
-\section{Discussion}
-From the results of the initial implementations of these models there is some key
-takeaways. The basic logistic model currently has the highest accuracy meaning that it
-makes the most correct predictions. This is because the model in its current form is very
-similar to simply using the ATP rank for the prediction as that value is based on the players
-current rank point totals. A higher point total corresponds to a higher ATP rank resulting
-in essentially the same prediction. In its current state this logistic model currently only
-considers a single parameter, the players rank points, however there is opportunity to
-extend this model to include other parameters present in the dataset
+\subsection{Bookmakers Consensus Model}
+The Bookmakers Consensus model outperformed all the other models significantly in accuracy
+and log loss with values of 0.695 and 0.575 respectively. The natural question that follows
+from the results of this model is why is this not the model selected as the best for
+predicting tennis match outcomes? For reasons that will be explored on in the discussion
+section of this report, due to how the information for each match played is reported, this
+model cant be used until after a match is played making it unsuitable as a solution for
+the prediction problem.
+
+\subsection{Match Subset Investigation}
+To dive deeper into the behaviour of the individual Elo models, a random subset of a single players
+matches were selected from the data and the Elo scores for each of those matches were
+plotted. Roger Federer was the player selected and his 300th to 330th games were used.
+The below plot was generated.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.8]{images/30_game_subset.png}
+  \caption{Federer 30 game subset}
+  \label{fig:federer-30}
+\end{figure}
+
+From Figure 4 it can be observed that the models have the same trajectories across the
+various Elo models which is to be expected. If a player wins a game the score should go
+up and if a player loses the game the score should go down. Where the models differ is
+in the magnitude of change. It can be observed that the models are in lockstep whilst
+Federer is winning, however when Federer loses game 321 the K model heavily punishes
+his score as it does not take into account his history of winning and solely focuses on
+the difference in player scores and K value to determine the amount to reduce the score.
+The Five Thirty Eight based models still punishes his score due to the loss, however at a
+lower rate. The Surface Combined Elo has the smallest drop of all the models which is most
+likely due to Federer having a lower Surface Elo for that match resulting in a reduction
+of his combined elo score. This would correlate to a smaller drop as the difference in
+rating is smaller.
+
+\begin{table}[h]
+  \begin{tabular}{||c c c c c c c c||}
+    \hline
+    Winner  & Loser     & Surface W & Surface L & K W  & K L  & 538 W & 538 L \\
+    \hline\hline
+    Safin M & Federer R & 1982      & 2244      & 2030 & 2267 & 1937  & 2173  \\
+    \hline
+  \end{tabular}
+  \caption{Elo scores for all elo models between Federer and Safin where Federer lost.
+    This figure highlights the impact the differences between the models when calculating
+    Elo score changes}
+\end{table}
+
+Table 4 s
+
+\subsection{Federer Career Investigation}
 
 The current implementations of the various Elo models captures a similar trajectory in a
 players career. This can be observed by overlaying the two Elo models which are updated
@@ -576,6 +650,20 @@ the improvement is picked up earlier in the Five Thirty Eight model when compare
 K Factor model. This results in the model reaching a steady state that accurately reflects
 Federers skill earlier than the K Factor model which when optimal parameters are identified
 should result in a higher overall accuracy.
+
+\vspace{10mm}
+\noindent \hrulefill
+
+\clearpage
+\section{Discussion}
+From the results of the initial implementations of these models there is some key
+takeaways. The basic logistic model currently has the highest accuracy meaning that it
+makes the most correct predictions. This is because the model in its current form is very
+similar to simply using the ATP rank for the prediction as that value is based on the players
+current rank point totals. A higher point total corresponds to a higher ATP rank resulting
+in essentially the same prediction. In its current state this logistic model currently only
+considers a single parameter, the players rank points, however there is opportunity to
+extend this model to include other parameters present in the dataset
 
 Currently, all the models in their current states have significantly lowered prediction accuracy
 than the simple approach of making a prediction solely based on the players ATP rank.

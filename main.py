@@ -29,7 +29,7 @@ from sklearn.metrics import confusion_matrix
 5 = Five Thirty Eight - Surface PROB
 6 = Bookmakers Consensus
 '''
-MODEL_TO_USE=5
+MODEL_TO_USE=4
 
 '''
 True = Build model and save to file
@@ -43,7 +43,7 @@ FIVE_THIRTY_EIGHT_DELTA = 240
 FIVE_THIRTY_EIGHT_SIGMA = 0.4
 FIVE_THIRTY_EIGHT_NU = 5
 
-SURFACE_SIGMA = 0.0
+SURFACE_SIGMA = 0.85
 
 directory = "tennis_atp/mens_atp"
 
@@ -64,7 +64,7 @@ def calbration_calc(df:pd.DataFrame,rank_1_name,rank2_name,prob_field_name):
 
     dif_mapping = {}
     for index, row in df.iterrows():
-        rank_diff = round(row[rank_1_name]-row[rank2_name],-1)
+        rank_diff = row[rank_1_name]-row[rank2_name]
         row_prob = row[prob_field_name]
         base_x.append(rank_diff)
         base_y.append(row_prob)
@@ -259,12 +259,27 @@ def build_surface_elo(model,combined_dfs):
     df_to_save.to_csv("output_models/temp_surface.csv")
     return df_to_save
 
+def build_logistics(model,combined_dfs):
+    df = model.from_df(combined_dfs)
+    column_list = ["prob","log_loss"]
+    final_columns = ["Winner","Loser"] + column_list
+    df_to_save = df[final_columns]
+    df_to_save.to_csv("output_models/temp_log.csv")
+
 if BUILD_MODEL:
     combined_dfs = load_joined()
     combined_dfs = combined_dfs.reset_index()
 
 if MODEL_TO_USE == 1:
     model = LogisticModel()
+    if BUILD_MODEL:
+        df = build_logistics(model,combined_dfs)
+    else:
+        df = pd.read_csv("output_models/temp_log.csv")
+
+    print(df)
+    model.run_metrics(df)
+
 elif MODEL_TO_USE == 2:
     model = KFactor()
     if BUILD_MODEL:
@@ -282,7 +297,6 @@ elif MODEL_TO_USE == 3:
         df = pd.read_csv("output_models/temp_538.csv")
 
     model.run_metrics(df, FIVE_THIRTY_EIGHT_DELTA,FIVE_THIRTY_EIGHT_NU,FIVE_THIRTY_EIGHT_SIGMA)
-
 elif MODEL_TO_USE == 4:
     combined_dfs = load_joined()
     combined_dfs = combined_dfs.reset_index()
@@ -294,7 +308,7 @@ elif MODEL_TO_USE == 4:
     else:
         df = pd.read_csv("output_models/temp_surface.csv")
 
-    model.run_metrics(df,SURFACE_SIGMA,False)
+    df = model.run_metrics(df,SURFACE_SIGMA,False)
 
 elif MODEL_TO_USE == 5:
     combined_dfs = load_joined()
@@ -307,20 +321,54 @@ elif MODEL_TO_USE == 5:
     else:
         df = pd.read_csv("output_models/temp_surface.csv")
 
-    model.run_metrics(df,SURFACE_SIGMA,True)
-
+    df = model.run_metrics(df,SURFACE_SIGMA,True)
 elif MODEL_TO_USE == 6:
     model = BookmakersConsensus()  
     if BUILD_MODEL:
         model.calculate_odds(combined_dfs)
         combined_dfs.to_csv("output_models/temp_bookmakers.csv")
-    else:
-        combined_dfs = pd.read_csv("output_models/temp_bookmakers.csv")
+    df = pd.read_csv("output_models/temp_bookmakers.csv")
 
-    model.run_metrics(combined_dfs)
+    df = model.run_metrics(combined_dfs)
 else:
     print("Error no valid model selected")
     exit(1)
+
+
+player = 'Federer R.'
+# ELO PLOTS
+player_plot = df.query(f"Winner == '{player}' or Loser == '{player}'")
+player_plot = player_plot.reset_index()
+b = pd.read_csv("output_models/temp_k_factor.csv")
+player_plot2 = b.query(f"Winner == '{player}' or Loser == '{player}'")
+player_plot2 = player_plot2.reset_index()
+
+a = player_plot.iloc[300:330]
+b = player_plot2.iloc[300:330]
+c = a.merge(b)
+print(c[["Winner","Loser","combined_future_winner_elo","combined_future_loser_elo","k_winner_240_5_0.4","k_loser_240_5_0.4","k_winner_30","k_loser_30"]])
+a["elo"] = a[["Winner","Loser","combined_future_winner_elo","combined_future_loser_elo"]].apply(lambda x : x["combined_future_winner_elo"] if(x["Winner"] == player) else x["combined_future_loser_elo"], axis=1)
+a["538"] = a[["Winner","Loser","k_winner_240_5_0.4","k_loser_240_5_0.4"]].apply(lambda x : x["k_winner_240_5_0.4"] if(x["Winner"] == player) else x["k_loser_240_5_0.4"], axis=1)
+b["k"] = b[["Winner","Loser","k_winner_30","k_loser_30"]].apply(lambda x : x["k_winner_30"] if(x["Winner"] == player) else x["k_loser_30"], axis=1)
+
+
+a["elo"].plot(label="Surface Combined")
+a["538"].plot(label="Five Thirty Eight")
+b["k"].plot(label="K Factor")
+
+plt.title("30 Game Subset Elo Comparison")
+plt.xlabel("Game Number")
+plt.ylabel("Elo Score")
+
+plt.legend()
+plt.show()
+
+#PROB PLOTS
+
+print(a["elo"])
+
+#Federer Career Plot
+
 
 # model = FiveThirtyEight()
 # model = LogisticModel()

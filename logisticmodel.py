@@ -77,3 +77,11 @@ class LogisticModel():
                 df.loc[index,"log_loss"] = self.log_loss(0.0,1-probability)
                     
         return df
+    
+    def run_metrics(self,df:pd.DataFrame):
+        correct_predictions = len(df[df["prob"] > 0.5])
+        total_predictions = len(df["prob"])
+        total_prob = np.sum(df["prob"])
+        print(f"Logistic Model, Calibration = {total_prob/correct_predictions}")
+        print(f"Logistic Model, Accuracy = {correct_predictions/total_predictions}")
+        print(f"Surface Elo Prob, Logloss = {np.mean(df['log_loss'])}")
