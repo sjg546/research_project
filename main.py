@@ -337,37 +337,58 @@ else:
 
 player = 'Federer R.'
 # ELO PLOTS
-player_plot = df.query(f"Winner == '{player}' or Loser == '{player}'")
-player_plot = player_plot.reset_index()
-b = pd.read_csv("output_models/temp_k_factor.csv")
-player_plot2 = b.query(f"Winner == '{player}' or Loser == '{player}'")
-player_plot2 = player_plot2.reset_index()
+# player_plot = df.query(f"Winner == '{player}' or Loser == '{player}'")
+# player_plot = player_plot.reset_index()
+# b = pd.read_csv("output_models/temp_k_factor.csv")
+# player_plot2 = b.query(f"Winner == '{player}' or Loser == '{player}'")
+# player_plot2 = player_plot2.reset_index()
 
-a = player_plot.iloc[300:330]
-b = player_plot2.iloc[300:330]
-c = a.merge(b)
-print(c[["Winner","Loser","combined_future_winner_elo","combined_future_loser_elo","k_winner_240_5_0.4","k_loser_240_5_0.4","k_winner_30","k_loser_30"]])
-a["elo"] = a[["Winner","Loser","combined_future_winner_elo","combined_future_loser_elo"]].apply(lambda x : x["combined_future_winner_elo"] if(x["Winner"] == player) else x["combined_future_loser_elo"], axis=1)
-a["538"] = a[["Winner","Loser","k_winner_240_5_0.4","k_loser_240_5_0.4"]].apply(lambda x : x["k_winner_240_5_0.4"] if(x["Winner"] == player) else x["k_loser_240_5_0.4"], axis=1)
-b["k"] = b[["Winner","Loser","k_winner_30","k_loser_30"]].apply(lambda x : x["k_winner_30"] if(x["Winner"] == player) else x["k_loser_30"], axis=1)
+# a = player_plot.iloc[300:330]
+# b = player_plot2.iloc[300:330]
+# c = a.merge(b)
+# print(c[["Winner","Loser","combined_future_winner_elo","combined_future_loser_elo","k_winner_240_5_0.4","k_loser_240_5_0.4","k_winner_30","k_loser_30"]])
+# a["elo"] = a[["Winner","Loser","combined_future_winner_elo","combined_future_loser_elo"]].apply(lambda x : x["combined_future_winner_elo"] if(x["Winner"] == player) else x["combined_future_loser_elo"], axis=1)
+# a["538"] = a[["Winner","Loser","k_winner_240_5_0.4","k_loser_240_5_0.4"]].apply(lambda x : x["k_winner_240_5_0.4"] if(x["Winner"] == player) else x["k_loser_240_5_0.4"], axis=1)
+# b["k"] = b[["Winner","Loser","k_winner_30","k_loser_30"]].apply(lambda x : x["k_winner_30"] if(x["Winner"] == player) else x["k_loser_30"], axis=1)
 
 
-a["elo"].plot(label="Surface Combined")
-a["538"].plot(label="Five Thirty Eight")
-b["k"].plot(label="K Factor")
+# a["elo"].plot(label="Surface Combined")
+# a["538"].plot(label="Five Thirty Eight")
+# b["k"].plot(label="K Factor")
 
-plt.title("30 Game Subset Elo Comparison")
+# plt.title("30 Game Subset Elo Comparison")
+# plt.xlabel("Game Number")
+# plt.ylabel("Elo Score")
+
+# plt.legend()
+# plt.show()
+
+#PROB PLOTS
+a = pd.read_csv("output_models/temp_k_factor.csv")
+player_plot_a = a.query(f"Winner == '{player}' or Loser == '{player}'").reset_index()
+a["federer"] = player_plot_a[["Winner","Loser","k_winner_30","k_loser_30"]].apply(lambda x : x["k_winner_30"] if(x["Winner"] == player) else x["k_loser_30"], axis=1)
+b = pd.read_csv("output_models/temp_538.csv")
+player_plot_b = b.query(f"Winner == '{player}' or Loser == '{player}'").reset_index()
+b["federer"] = player_plot_b[["Winner","Loser","k_winner_240_5_0.4","k_loser_240_5_0.4"]].apply(lambda x : x["k_winner_240_5_0.4"] if(x["Winner"] == player) else x["k_loser_240_5_0.4"], axis=1)
+
+player_plot_c = df.query(f"Winner == '{player}' or Loser == '{player}'").reset_index()
+player_plot_c["federer"] = player_plot_c[["Winner","Loser","combined_future_winner_elo","combined_future_loser_elo"]].apply(lambda x : x["combined_future_winner_elo"] if(x["Winner"] == player) else x["combined_future_loser_elo"], axis=1)
+
+# a["federer"].plot(label="K Factor")
+b["federer"].plot(label="Five Thirty Eight")
+# player_plot_c["federer"].plot(label="Surface Combined")
+
+plt.title("Federer Five Thirty Eight")
 plt.xlabel("Game Number")
 plt.ylabel("Elo Score")
 
 plt.legend()
 plt.show()
 
-#PROB PLOTS
-
 print(a["elo"])
 
 #Federer Career Plot
+
 
 
 # model = FiveThirtyEight()

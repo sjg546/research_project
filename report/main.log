@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.7.12)  20 JUL 2024 10:08
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.7.12)  21 JUL 2024 12:17
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -267,10 +267,6 @@ Underfull \hbox (badness 10000) in paragraph at lines 193--202
 
 [4]
 
-LaTeX Warning: Citation `BCM' on page 5 undefined on input line 253.
-
-
-
 [5]
 Underfull \hbox (badness 10000) in paragraph at lines 319--325
 
@@ -340,31 +336,39 @@ File: images/30_game_subset.png Graphic file (type png)
 Package pdftex.def Info: images/30_game_subset.png  used on input line 600.
 (pdftex.def)             Requested size: 370.02289pt x 277.51717pt.
 
-
-[16]
-Overfull \hbox (34.27644pt too wide) in paragraph at lines 619--628
+Overfull \hbox (50.10406pt too wide) in paragraph at lines 611--624
 [][] 
  []
 
 
-LaTeX Warning: `h' float specifier changed to `ht'.
+Underfull \hbox (badness 10000) in paragraph at lines 605--625
 
-<images/federer_comparison.png, id=77, 462.528pt x 346.896pt>
-File: images/federer_comparison.png Graphic file (type png)
-<use images/federer_comparison.png>
-Package pdftex.def Info: images/federer_comparison.png  used on input line 639.
-(pdftex.def)             Requested size: 370.02289pt x 277.51717pt.
+ []
 
 
-[17 <./images/30_game_subset.png>]
 
-[18 <./images/federer_comparison.png>]
+[16 <./images/30_game_subset.png>]
+<images/federer_career.png, id=78, 519.6213pt x 320.8788pt>
+File: images/federer_career.png Graphic file (type png)
+<use images/federer_career.png>
+Package pdftex.def Info: images/federer_career.png  used on input line 644.
+(pdftex.def)             Requested size: 415.6976pt x 256.70337pt.
 
-[19]
+Overfull \hbox (45.81177pt too wide) in paragraph at lines 644--645
+[][] 
+ []
 
-[20
+
+
+[17]
+
+[18 <./images/federer_career.png>]
+
+[19
 
 ]
+
+[20]
 
 [21]
 
@@ -381,21 +385,17 @@ enddocument/afterlastpage: lastpage setting LastPage.
 LaTeX2e <2024-06-01> patch level 2
 L3 programming layer <2024-05-27>
  ***********
-
-
-LaTeX Warning: There were undefined references.
-
  ) 
 Here is how much of TeX's memory you used:
- 3205 strings out of 475543
- 50086 string characters out of 5775889
+ 3207 strings out of 475543
+ 50087 string characters out of 5775889
  1938908 words of memory out of 5000000
- 25818 multiletter control sequences out of 15000+600000
+ 25820 multiletter control sequences out of 15000+600000
  565486 words of font info for 63 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 70i,12n,65p,390b,273s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 70i,12n,65p,432b,271s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb><c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb><c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb><c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb><c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb><c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb><c:/Users/Lounge/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb>
-Output written on main.pdf (24 pages, 349138 bytes).
+Output written on main.pdf (24 pages, 398211 bytes).
 PDF statistics:
  158 PDF objects out of 1000 (max. 8388607)
  94 compressed objects within 1 object stream

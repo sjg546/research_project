@@ -536,15 +536,15 @@ of Roger Federer across his long career.
   \label{fig:federer-kfactor}
 \end{figure}
 
-It can be observed the model captures the trajectory of his career quite well with a slow
-start corresponding to his poor performances at the start of his career, an extended peak
-during the middle of his career coinciding with his "prime" and then a slight drop off
-towards the end of his career before his retirement.
+It can be observed the model captures the trajectory of his career quite well with a rapid increase
+in his rank early in his career, an extended peak
+during the middle of his career coinciding with his "prime" and then as his score approaches the lowest
+value of his prime his retirement.
 
 \subsection{Five Thirty Eight Model}
 As discussed in the Method section of this report the Five Thirty Eight model relies on
 three hyperparameters to define the model. The values $(\delta,\nu,\sigma) = (240,5,0.4)$
-were determined after completing a broad grid search across all permutations for $delta$
+were determined after completing a broad grid search across all permutations for $\delta$
 between the values of 100 and 300 with a step increment of 20, $\nu$ between the values of
 1 and 10 with a step increment of 1 and $\sigma$ between the values of 0.1 and 1 with a
 step increment of 0.1. This involved building and testing a thousand different models
@@ -605,7 +605,27 @@ The below plot was generated.
 From Figure 4 it can be observed that the models have the same trajectories across the
 various Elo models which is to be expected. If a player wins a game the score should go
 up and if a player loses the game the score should go down. Where the models differ is
-in the magnitude of change. It can be observed that the models are in lockstep whilst
+in the magnitude of change.
+\\
+\begin{table}[H]
+  \begin{tabular}{||c c c c c c c c||}
+    \hline
+    Winner    & Loser      & Surface W & Surface L & 538 W & 538 L & K W  & K L  \\
+    \hline\hline
+    Federer R & Agassi A   & 2259      & 2021      & 2286  & 2028  & 2198 & 1919 \\
+    Safin M   & Federer R  & 1982      & 2244      & 2030  & 2267  & 1937 & 2173 \\
+    Federer R & Ulihrach B & 2244      & 1583      & 2267  & 1611  & 2174 & 1519 \\
+
+    \hline
+  \end{tabular}
+  \caption{Elo model scores for match between Federer and Safin where Federer lost.
+    Including Federers games immediately before and after.
+    This figure highlights the impact the differences between the models when calculating
+    Elo score changes}
+\end{table}
+Table 4 shows the differences in both the starting Elos of each player in the game of
+interest and the change of Elo caused by the loss.
+It can be observed that the models are in lockstep whilst
 Federer is winning, however when Federer loses game 321 the K model heavily punishes
 his score as it does not take into account his history of winning and solely focuses on
 the difference in player scores and K value to determine the amount to reduce the score.
@@ -615,33 +635,18 @@ likely due to Federer having a lower Surface Elo for that match resulting in a r
 of his combined elo score. This would correlate to a smaller drop as the difference in
 rating is smaller.
 
-\begin{table}[h]
-  \begin{tabular}{||c c c c c c c c||}
-    \hline
-    Winner  & Loser     & Surface W & Surface L & K W  & K L  & 538 W & 538 L \\
-    \hline\hline
-    Safin M & Federer R & 1982      & 2244      & 2030 & 2267 & 1937  & 2173  \\
-    \hline
-  \end{tabular}
-  \caption{Elo scores for all elo models between Federer and Safin where Federer lost.
-    This figure highlights the impact the differences between the models when calculating
-    Elo score changes}
-\end{table}
-
-Table 4 s
-
 \subsection{Federer Career Investigation}
 
 The current implementations of the various Elo models captures a similar trajectory in a
-players career. This can be observed by overlaying the two Elo models which are updated
+players career. This can be observed by overlaying the three Elo models which are updated
 on a game by game basis, K Factor and Five Thirty Eight.
 \begin{figure}[H]
-  \includegraphics[scale=0.8]{images/federer_comparison.png}
+  \includegraphics[scale=0.8]{images/federer_career.png}
   \caption{K Factor vs Five Thirty Eight}
   \label{fig:federer-k-538}
 \end{figure}
 
-From this plot it can be observed that the Five Thirty Eight Model varies more than the
+From Figure 5 it can be observed that the Five Thirty Eight Model varies more than the
 K Factor model as a result of individual matches. This is because it considers the players
 history when determining a K value for the rank update. Outlier performances have a greater
 impact on an individual update which results in a lower rating being assigned early in the
@@ -649,7 +654,12 @@ career with poorer performances occurring. Conversely, as Federers performance i
 the improvement is picked up earlier in the Five Thirty Eight model when compared to the
 K Factor model. This results in the model reaching a steady state that accurately reflects
 Federers skill earlier than the K Factor model which when optimal parameters are identified
-should result in a higher overall accuracy.
+should result in a higher overall accuracy. The Surface Combined model sits between the
+K Factor and the Five Thirty Eight models with the variance in rankings increased when compared
+to the base Five Thirty Eight model. This is caused by the influence of the highly volatile
+surface Elo of the player. Since the two ratings are combined using the weighting factor there
+are two points in which an upset could occur resulting in the potential for more volatile
+rating changes.
 
 \vspace{10mm}
 \noindent \hrulefill
@@ -657,21 +667,67 @@ should result in a higher overall accuracy.
 \clearpage
 \section{Discussion}
 From the results of the initial implementations of these models there is some key
-takeaways. The basic logistic model currently has the highest accuracy meaning that it
-makes the most correct predictions. This is because the model in its current form is very
-similar to simply using the ATP rank for the prediction as that value is based on the players
-current rank point totals. A higher point total corresponds to a higher ATP rank resulting
-in essentially the same prediction. In its current state this logistic model currently only
+takeaways. The basic logistic model has the lowest accuracy meaning that it
+makes the least correct predictions. Interestingly the accuracy of the logistic model is
+worse than simply predicting the higher ranked player to win any given game. This could be
+caused by games dropped from the dataset as a result of the merging process.
+In its current state this logistic model currently only
 considers a single parameter, the players rank points, however there is opportunity to
-extend this model to include other parameters present in the dataset
+extend this model to include other parameters present in the dataset. This work will be expanded
+on in the future work section of this report.
 
-Currently, all the models in their current states have significantly lowered prediction accuracy
-than the simple approach of making a prediction solely based on the players ATP rank.
-The true value in the above work is that these models have much more potential for extension
-or modification to improve their accuracy. As mentioned, the logistic model can be
-extended with more parameters, the Elo models can have hyperparameters tuned and since
-these models are probability based the threshold at which a prediction is made can be
-changed.
+The naive option of picking the higher ranked player to win any given game turns out to have
+a reasonably high accuracy with 0.660. The only predictive models that outperform it are the base
+Five Thirty Eight model and the Surface Combined model. The K Factor and Logistic Regression models
+perform worse, however due to the probabilistic functionality of these models log loss and calibration
+metrics can be obtained to more accurately measure their performance. The basic K Factor model
+is as optimised as it can be after the investigation to find the optimal K value was completed.
+There is still opportunity to optimise the Logistic Regression model through incorporation of
+other parameters in the model. Due to the current poor performance of the model when using
+the difference in rank points, an important statistical feature of the dataset, it is highly ulikely
+that this work would result in a model that performs as well as the other Elo models.
+
+The Five Thirty Eight model performs quite well with a better accuracy than the naive approach and
+comparable log loss and accuracy to the best performing predictive models. The Five Thirty Eight
+was the most influential model that was built and trained as it was used individually and as a
+part of the surface combined elo models. The broad grid search to find the optimal hyperparameters
+was chosen over the more complex options such as gradient descent as it was observed that the
+performance metrics of the various values did not change by much when they were close to the found
+near optimal values. Due to the complexity of implementation on minimal potential for metric
+improvement the simpler grid search was determined to be sufficient for this report. The optimal
+values for the Five Thirty Eight model were used to build the standalone surface elos for each
+player and there is the potential that these values were not the most optimal. The impact of this
+is negligible since the weighting factor used when combining the two models heavily reduced the impact
+of the individual surface elo on the final rating. The optimal weighting factor was found to be 0.85
+therefore the impact of any sub optimal hyperparameters would be reduced. In the future work
+section the hyperparameter tuning for the surface elo will be conducted to investigate if there is
+some unexpected performance gains that can be achieved.
+
+Combining the surface model with the Five Thirty Eight model resulted in an overall better performing
+model with accuracy and log loss being improved however a slightly lower calibration value.
+The differences in the metrics were minor implying that overall the combination of these two models
+did not demonstrate significantly different behaviors and only had an impact on prediction when the
+base Five Thirty Eight ratings for each player were extremely close. Since the majority of games
+are played on a hard surface, the surface elo may not be adding much value to predictions made on
+this surface. Performance on the most common surface type should not vary as much between players
+resulting in a rich get richer scenario where the top performing players have a high surface elo
+on the hard surface since they win many games on that surface. In the future work section the
+potential of only incorporating the surface elo when played on the more volatile surfaces, grass
+and clay, will be investigated.
+
+When comparing the predictive model results to the BCM as a benchmark model
+it can be observed that there is room for improvement. The BCM vastly
+outperforms the all the models in both accuracy and log loss. It does have a worse calibration
+value which is to be expected due to the incentives present inherent in the BCM. It can be assumed
+that betting companies value the log loss metric higher than all other metrics as it implies a level
+of confidence in predictions and there is a strong profit incentive in not being wildly wrong
+in any given prediction. Since bookmakers odds for given matches aren't collated prior to a match
+being played, this model is inappropriate for predicting future matches. There is potential for
+writing a system that scrapes and collates these odds from either the bookmakers websites or
+certain odd aggregation websites. There are potential issues with building and using a system like
+this without permission as there is potential that they go against the terms of service of the
+various sites and can have ramifications around copyright resulting potentially resulting in
+sanctions being placed on the user \cite{out-lawcom_ryanair_nodate}
 
 \subsection{Future Work}
 Extending the investigated models will be the focus for the next part of this research
@@ -685,11 +741,14 @@ outcome \cite{loffing_left-handedness_2012}.
 The basic K Factor Elo model will not be investigated any further as the various values
 of K and its impact on model performance have already been investigated above. The Five
 Thirty Eight model leverages three independent hyperparameters to calculate the change
-in ranking after each contest. The search space for brute forcing the optimal values of
-these hyperparameters is infeasible. There are many methods of optimisation for
+in ranking after each contest. Although using a brute force solution for determining near
+optimal hyperparameters was conducted a more sophisticated solution will be investigated to
+see if better values can be found. There are many methods of optimisation for
 hyperparameter search \cite{claesen_hyperparameter_2015} and investigating the
 most appropriate one for optimising the Elo model parameters will form the basis of
-future work for improving the Five Thirty Eight model.
+future work for improving the Five Thirty Eight model. This process will also be completed
+for the standalone surface elo's since no investigation has been completed on the impact of
+using the current Five Thirty Eight parameters for this model.
 
 The current method of determining whether any of these Elo models have produced a correct
 prediction is by determining if the probability of player i beating player j is greater
@@ -701,13 +760,12 @@ matches as when players have similar Elo scores the model will not make a predic
 Balancing the improvement to model accuracy versus the reduced number of matches in which
 a prediction is made will be completed and discussed.
 
-Comparing model performance against open source metrics to rate performance of the various
-models will be included in future work. Investigations into these various metrics will be
-conducted. The Five Thirty Eight model with optimal parameters has been found to provide
-predictions with approximately 75\% accuracy \cite{kovalchik_searching_2016}. This is just
-one of the metrics that will be compared and will be used to set a baseline of which to
-
-
+Weighting the elo rating changes based on the level of match played will be another area of
+investigation. Currently all matches are treated equally however it may be beneficial to weight
+matches played in grand slams higher than matches played in lower level tournaments. The WTA ranks
+do something similar with the maximum points varying based on the level of the given tournament.
+This idea can be extended with extra weighting being given for higher rounds. Ie the Elo rating
+change should be higher if a player wins the final match in a grand slam.
 \clearpage
 
 \section{Conclusion}
@@ -716,7 +774,7 @@ model accuracy and the log loss of the models predictions. There are many mathem
 These models range in both complexity and performance as such robust performance testing
 has been conducted to identify which models perform the best. Performance of these models
 have been quantified by measuring both model accuracy and the log loss of the models
-predictions. An extensive open-source dataset of historical tennis data was leveraged to
+predictions. Extensive open-source datasets of historical tennis data was leveraged to
 both build and test these models. Currently a small subset of the available data is being
 used to build these models. Future work will include incorporating a greater number of
 features within the dataset. Capturing more features of the available data and conducting

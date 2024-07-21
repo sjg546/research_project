@@ -5,15 +5,16 @@ Marc Claesen and Bart De~Moor.
 \newblock Hyperparameter {Search} in {Machine} {Learning}, April 2015.
 \newblock arXiv:1502.02127 [cs, stat].
 
-\bibitem{EloMMR2021}
-Aram Ebtekar and Paul Liu.
-\newblock Elo-mmr: A rating system for massive multiplayer competitions, 2021.
-
 \bibitem{kovalchik_searching_2016}
 Stephanie~Ann Kovalchik.
 \newblock Searching for the {GOAT} of tennis win prediction.
 \newblock {\em Journal of Quantitative Analysis in Sports}, 12(3):127--138, September 2016.
 \newblock Publisher: De Gruyter.
+
+\bibitem{BCM}
+Christoph Leitner, Achim Zeileis, and Kurt Hornik.
+\newblock Is federer stronger in a tournament without nadal? an evaluation of odds and seedings for wimbledon 2009.
+\newblock WorkingPaper~94, November 2009.
 
 \bibitem{loffing_left-handedness_2012}
 Florian Loffing, Norbert Hagemann, and Bernd Strauss.
@@ -23,6 +24,10 @@ Florian Loffing, Norbert Hagemann, and Bernd Strauss.
 \bibitem{nag_tennis_2022}
 Utathya Nag.
 \newblock Tennis rankings: {Everything} you need to know, April 2022.
+
+\bibitem{out-lawcom_ryanair_nodate}
+{OUT-LAW.COM}.
+\newblock Ryanair cancels aggregator-booked tickets in escalating scraping war.
 
 \bibitem{sackmann_jeffsackmanntennis_atp_2024}
 Jeff Sackmann.
