@@ -1,18 +1,9 @@
-import csv
 import pandas as pd
-import matplotlib
 import matplotlib.pyplot as plt
 import os
-from tabulate import tabulate
 from logisticmodel import LogisticModel
-from elommr import ELOMMR
-import json
 import numpy as np
 import math
-from resultsparser import ResultsParser
-from tests import Tests
-from geopy.geocoders import Nominatim 
-from linearmodel import LinearModel
 from kfactor import KFactor
 from fivethirtyeight import FiveThirtyEight
 from bookmakers_consensus import BookmakersConsensus
